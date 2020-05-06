@@ -258,7 +258,7 @@ static void gl_setup()
 	s_vao = new VAO(GL_TRIANGLES, vertex_data, index_data);
 }
 
-static void draw()
+static void update()
 {
 	constexpr float move_speed = 0.1f;
 	if (g::key::down_up) {
@@ -279,6 +279,11 @@ static void draw()
 	}
 	flush_modelview();
 	flush_projection();
+}
+
+static void draw()
+{
+	update();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	s_vao->draw();
 }

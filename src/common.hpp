@@ -45,11 +45,6 @@ static inline std::ostream &operator<< (std::ostream &o, const glm::vec3 &v)
 	return o;
 }
 
-void update_projection();
-void update_modelview();
-void flush_projection();
-void flush_modelview();
-
 namespace g {
 	extern GLuint standard_shader;
 	extern int canvas_width;

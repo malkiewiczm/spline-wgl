@@ -36,6 +36,83 @@ void g::camera3d::reset()
 	g::camera3d::rotation = { 1.f, 0.f, 0.f, 0.f };
 }
 
+
+static bool dirty_projection = true;
+static bool dirty_modelview = true;
+
+void update_projection()
+{
+	dirty_projection = true;
+}
+
+void update_modelview()
+{
+	dirty_modelview = true;
+}
+
+void flush_projection()
+{
+	if (! dirty_projection)
+		return;
+	dirty_projection = false;
+	if (g::camera3d::enabled) {
+		constexpr float fov = TORAD(45.f);
+		const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
+		glm::mat4 proj = glm::perspective(fov, aspect, 0.1f, 100.f);
+		glUniformMatrix4fv(g::u_projection, 1, false, &proj[0][0]);
+	} else {
+		float left_right = 5.f;
+		float top_bottom = 5.f;
+		if (g::canvas_width > g::canvas_height) {
+			const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
+			top_bottom *= 0.5f*aspect;
+		} else {
+			const float aspect = static_cast<float>(g::canvas_height) / g::canvas_width;
+			left_right *= 0.5f*aspect;
+		}
+		glm::mat4 proj = glm::ortho(-left_right, left_right, -top_bottom, top_bottom, -50.f, 50.f);
+		glUniformMatrix4fv(g::u_projection, 1, false, &proj[0][0]);
+	}
+}
+
+void flush_modelview()
+{
+	if (! dirty_modelview)
+		return;
+	dirty_modelview = false;
+	if (g::camera3d::enabled) {
+		glm::mat4 mv = glm::mat4_cast(g::camera3d::rotation);
+		mv = glm::translate(mv, g::camera3d::position);
+		glUniformMatrix4fv(g::u_modelview, 1, false, &mv[0][0]);
+	} else {
+		constexpr float d90 = TORAD(90.f);
+		constexpr float d180 = TORAD(180.f);
+		constexpr float d270 = TORAD(270.f);
+		glm::mat4 mv(1.f);
+		switch (g::camera_ortho_side) {
+		case g::ORTHO_LEFT:
+			mv = glm::rotate(mv, d180, { 0.f, 1.f, 0.f });
+			break;
+		case g::ORTHO_TOP:
+			mv = glm::rotate(mv, d90, { 1.f, 0.f, 0.f });
+			break;
+		case g::ORTHO_BOTTOM:
+			mv = glm::rotate(mv, d270, { 1.f, 0.f, 0.f });
+			break;
+		case g::ORTHO_FRONT:
+			mv = glm::rotate(mv, d90, { 0.f, 1.f, 0.f });
+			break;
+		case g::ORTHO_BACK:
+			mv = glm::rotate(mv, d270, { 0.f, 1.f, 0.f });
+			break;
+		default:
+			// ORTHO_RIGHT is no rotation
+			break;
+		}
+		glUniformMatrix4fv(g::u_modelview, 1, false, &mv[0][0]);
+	}
+}
+
 bool g::camera3d::enabled;
 glm::vec3 g::camera3d::position;
 glm::quat g::camera3d::rotation;

@@ -14,3 +14,8 @@ namespace g {
 		void reset();
 	}
 }
+
+void update_projection();
+void update_modelview();
+void flush_projection();
+void flush_modelview();
