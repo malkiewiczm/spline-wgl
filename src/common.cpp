@@ -7,8 +7,24 @@ void _die(const char *msg, const char *file, int line)
 	abort();
 }
 
+static bool dirty_projection = true;
+static bool dirty_modelview = true;
+
 void update_projection()
 {
+	dirty_projection = true;
+}
+
+void update_modelview()
+{
+	dirty_modelview = true;
+}
+
+void flush_projection()
+{
+	if (! dirty_projection)
+		return;
+	dirty_projection = false;
 	if (g::camera3d::enabled) {
 		constexpr float fov = TORAD(45.f);
 		const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
@@ -28,17 +44,14 @@ void update_projection()
 	}
 }
 
-void update_modelview()
+void flush_modelview()
 {
+	if (! dirty_modelview)
+		return;
+	dirty_modelview = false;
 	if (g::camera3d::enabled) {
-#define REVERSE
-#ifdef REVERSE
 		glm::mat4 mv = glm::mat4_cast(g::camera3d::rotation);
 		mv = glm::translate(mv, g::camera3d::position);
-#else
-		glm::mat4 mv = glm::translate(glm::mat4(1.f), g::camera3d::position);
-		mv *= glm::mat4_cast(g::camera3d::rotation);
-#endif
 		glUniformMatrix4fv(g::u_modelview, 1, false, &mv[0][0]);
 	} else {
 		constexpr float d90 = TORAD(90.f);
@@ -76,7 +89,3 @@ GLuint g::u_projection;
 GLuint g::u_modelview;
 int g::camera_ortho_side;
 bool g::is_edit_mode;
-bool g::key_down_up;
-bool g::key_down_down;
-bool g::key_down_left;
-bool g::key_down_right;

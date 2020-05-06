@@ -14,18 +14,26 @@ void g::camera3d::rotate_x(const float angle)
 {
 	glm::quat q = glm::angleAxis(angle, glm::vec3(1.f, 0.f, 0.f));
 	g::camera3d::rotation = q*g::camera3d::rotation;
+	//g::camera3d::rotation *= q;
 }
 
 void g::camera3d::rotate_y(const float angle)
 {
 	glm::quat q = glm::angleAxis(angle, glm::vec3(0.f, 1.f, 0.f));
-	g::camera3d::rotation = q*g::camera3d::rotation;
+	//g::camera3d::rotation = q*g::camera3d::rotation;
+	g::camera3d::rotation *= q;
 }
 
 void g::camera3d::rotate_z(const float angle)
 {
 	glm::quat q = glm::angleAxis(angle, glm::vec3(0.f, 0.f, 1.f));
 	g::camera3d::rotation = q*g::camera3d::rotation;
+}
+
+void g::camera3d::reset()
+{
+	g::camera3d::position = { 0.f, 0.f, -5.f };
+	g::camera3d::rotation = { 1.f, 0.f, 0.f, 0.f };
 }
 
 bool g::camera3d::enabled;

@@ -5,6 +5,7 @@
 #include "vao.hpp"
 #include "camera.hpp"
 #include "mouse.hpp"
+#include "key.hpp"
 
 static EM_BOOL on_resize(int eventType, const EmscriptenUiEvent *uiEvent, void *userData)
 {
@@ -33,6 +34,12 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 		bool new_3d_enabled = g::camera3d::enabled;
 		int new_dir = g::camera_ortho_side;
 		switch (keyCode) {
+		case '1':
+			if (g::camera3d::enabled) {
+				g::camera3d::reset();
+				update_modelview();
+			}
+			break;
 		case 'F':
 			new_dir = g::ORTHO_FRONT;
 			new_3d_enabled = false;
@@ -61,20 +68,23 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 			new_3d_enabled = true;
 			break;
 		case 'W':
-			g::key_down_up = true;
+			g::key::down_up = true;
 			break;
 		case 'A':
-			g::key_down_left = true;
+			g::key::down_left = true;
 			break;
 		case 'S':
-			g::key_down_down = true;
+			g::key::down_down = true;
 			break;
 		case 'D':
-			g::key_down_right = true;
+			g::key::down_right = true;
 			break;
 		}
 		if (new_3d_enabled != g::camera3d::enabled || new_dir != g::camera_ortho_side) {
 			g::camera3d::enabled = new_3d_enabled;
+			if (! g::camera3d::enabled && g::mouse::is_locked) {
+				emscripten_exit_pointerlock();
+			}
 			g::camera_ortho_side = new_dir;
 			update_projection();
 			update_modelview();
@@ -83,16 +93,16 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 	} else {
 		switch (keyCode) {
 		case 'W':
-			g::key_down_up = false;
+			g::key::down_up = false;
 			break;
 		case 'A':
-			g::key_down_left = false;
+			g::key::down_left = false;
 			break;
 		case 'S':
-			g::key_down_down = false;
+			g::key::down_down = false;
 			break;
 		case 'D':
-			g::key_down_right = false;
+			g::key::down_right = false;
 			break;
 		}
 	}
@@ -102,12 +112,8 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 static EM_BOOL on_mouse(int eventType, const EmscriptenMouseEvent *mouseEvent, void *userData)
 {
 	UNUSED(userData);
-	g::mouse::previous_x = g::mouse::x;
-	g::mouse::previous_y = g::mouse::y;
 	g::mouse::x = mouseEvent->clientX;
 	g::mouse::y = mouseEvent->clientY;
-	g::mouse::dx = g::mouse::x - g::mouse::previous_x;
-	g::mouse::dy = g::mouse::y - g::mouse::previous_y;
 	if (eventType == EMSCRIPTEN_EVENT_MOUSELEAVE) {
 		g::mouse::is_down = false;
 	} else if (mouseEvent->button == 0) {
@@ -116,13 +122,29 @@ static EM_BOOL on_mouse(int eventType, const EmscriptenMouseEvent *mouseEvent, v
 		} else if (eventType == EMSCRIPTEN_EVENT_MOUSEUP) {
 			g::mouse::is_down = false;
 		}
+	} else if (mouseEvent->button == 2 && eventType == EMSCRIPTEN_EVENT_MOUSEDOWN && g::camera3d::enabled) {
+		if (g::mouse::is_locked) {
+			emscripten_exit_pointerlock();
+		} else {
+			emscripten_request_pointerlock("canvas", false);
+		}
+		g::key::release_all();
 	}
-	if (g::mouse::is_down && g::camera3d::enabled) {
-		glm::vec2 m { g::mouse::dx / static_cast<float>(g::canvas_width), g::mouse::dy / static_cast<float>(g::canvas_height) };
-		g::camera3d::rotate_x(m.y);
+	if (eventType == EMSCRIPTEN_EVENT_MOUSEMOVE && g::camera3d::enabled && g::mouse::is_locked) {
+		glm::vec2 m { mouseEvent->movementX, mouseEvent->movementY };
+		m /= 400.f;
 		g::camera3d::rotate_y(m.x);
+		g::camera3d::rotate_x(m.y);
 		update_modelview();
 	}
+	return true;
+}
+
+static EM_BOOL on_pointerlock(int eventType, const EmscriptenPointerlockChangeEvent *pointerlockChangeEvent, void *userData)
+{
+	UNUSED(eventType);
+	UNUSED(userData);
+	g::mouse::is_locked = pointerlockChangeEvent->isActive;
 	return true;
 }
 
@@ -198,11 +220,11 @@ void main() {\n\
 	emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, on_mouse);
 	emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, on_mouse);
 	emscripten_set_mouseleave_callback("canvas", nullptr, false, on_mouse);
+	emscripten_set_pointerlockchange_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, on_pointerlock);
 	g::camera3d::enabled = true;
 	g::camera_ortho_side = g::ORTHO_RIGHT;
 	g::is_edit_mode = true;
-	g::camera3d::position = { 0.f, 0.f, -5.f };
-	g::camera3d::rotation = { 1.f, 0.f, 0.f, 0.f };
+	g::camera3d::reset();
 	{
 		// calling this event updates the projection
 		EmscriptenUiEvent evt;
@@ -238,26 +260,25 @@ static void gl_setup()
 
 static void draw()
 {
-	constexpr float move_speed = 0.05f;
-	bool update_mv = false;
-	if (g::key_down_up) {
+	constexpr float move_speed = 0.1f;
+	if (g::key::down_up) {
 		g::camera3d::move_relative({ 0., 0., move_speed });
-		update_mv = true;
-	}
-	if (g::key_down_down) {
-		g::camera3d::move_relative({ 0., 0., -move_speed });
-		update_mv = true;
-	}
-	if (g::key_down_left) {
-		g::camera3d::move_relative({ move_speed, 0., 0. });
-		update_mv = true;
-	}
-	if (g::key_down_right) {
-		g::camera3d::move_relative({ -move_speed, 0., 0. });
-		update_mv = true;
-	}
-	if (update_mv)
 		update_modelview();
+	}
+	if (g::key::down_down) {
+		g::camera3d::move_relative({ 0., 0., -move_speed });
+		update_modelview();
+	}
+	if (g::key::down_left) {
+		g::camera3d::move_relative({ move_speed, 0., 0. });
+		update_modelview();
+	}
+	if (g::key::down_right) {
+		g::camera3d::move_relative({ -move_speed, 0., 0. });
+		update_modelview();
+	}
+	flush_modelview();
+	flush_projection();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	s_vao->draw();
 }

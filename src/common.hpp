@@ -47,6 +47,8 @@ static inline std::ostream &operator<< (std::ostream &o, const glm::vec3 &v)
 
 void update_projection();
 void update_modelview();
+void flush_projection();
+void flush_modelview();
 
 namespace g {
 	extern GLuint standard_shader;
@@ -62,8 +64,4 @@ namespace g {
 	constexpr int ORTHO_FRONT = 4;
 	constexpr int ORTHO_BACK = 5;
 	extern bool is_edit_mode;
-	extern bool key_down_up;
-	extern bool key_down_down;
-	extern bool key_down_left;
-	extern bool key_down_right;
 }

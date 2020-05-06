@@ -11,5 +11,6 @@ namespace g {
 		void rotate_x(const float angle);
 		void rotate_y(const float angle);
 		void rotate_z(const float angle);
+		void reset();
 	}
 }
