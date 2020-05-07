@@ -23,6 +23,8 @@ private:
 	GLuint index_buffer;
 	int element_count;
 	const GLenum draw_mode;
+	const int kind;
+	void context_switch() const;
 	void gen_buffers();
 public:
 	template <typename Vertex>

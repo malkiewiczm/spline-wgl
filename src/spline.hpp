@@ -5,6 +5,7 @@
 
 namespace g {
 	namespace spline {
-		void add_pt(const glm::vec3 &p, VAO &vao);
+		void edit_click(VAO &control_vao, VAO &curve_vao);
+		void add_pt(const glm::vec3 &p, VAO &control_vao, VAO &curve_vao);
 	}
 }

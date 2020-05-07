@@ -84,30 +84,7 @@ void flush_modelview()
 		mv = glm::translate(mv, g::camera3d::position);
 		glUniformMatrix4fv(g::u_modelview, 1, false, &mv[0][0]);
 	} else {
-		constexpr float d90 = TORAD(90.f);
-		constexpr float d180 = TORAD(180.f);
-		constexpr float d270 = TORAD(270.f);
-		glm::mat4 mv(1.f);
-		switch (g::camera_ortho_side) {
-		case g::ORTHO_LEFT:
-			mv = glm::rotate(mv, d180, { 0.f, 1.f, 0.f });
-			break;
-		case g::ORTHO_TOP:
-			mv = glm::rotate(mv, d90, { 1.f, 0.f, 0.f });
-			break;
-		case g::ORTHO_BOTTOM:
-			mv = glm::rotate(mv, d270, { 1.f, 0.f, 0.f });
-			break;
-		case g::ORTHO_FRONT:
-			mv = glm::rotate(mv, d90, { 0.f, 1.f, 0.f });
-			break;
-		case g::ORTHO_BACK:
-			mv = glm::rotate(mv, d270, { 0.f, 1.f, 0.f });
-			break;
-		default:
-			// ORTHO_RIGHT is no rotation
-			break;
-		}
+		const glm::mat4 &mv = g::ortho_rotations[g::camera_ortho_side];
 		glUniformMatrix4fv(g::u_modelview, 1, false, &mv[0][0]);
 	}
 }

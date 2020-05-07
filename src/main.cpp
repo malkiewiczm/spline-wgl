@@ -8,6 +8,10 @@
 #include "key.hpp"
 #include "spline.hpp"
 
+static bool s_show_control_mesh = true;
+static VAO *s_control_vao;
+static VAO *s_curve_vao;
+
 static EM_BOOL on_resize(int eventType, const EmscriptenUiEvent *uiEvent, void *userData)
 {
 	UNUSED(eventType);
@@ -40,6 +44,9 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 				g::camera3d::reset();
 				update_modelview();
 			}
+			break;
+		case 'H':
+			s_show_control_mesh = ! s_show_control_mesh;
 			break;
 		case 'F':
 			new_dir = g::ORTHO_FRONT;
@@ -110,24 +117,6 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 	return false;
 }
 
-static VAO *s_vao;
-
-static void add_pt_click()
-{
-	glm::vec3 p { g::mouse::x, g::mouse::y, 0.f };
-	constexpr float R = 5.f;
-	p.x = (2.f*(p.x / g::canvas_width) - 1.f) * R;
-	p.y = (2.f*(p.y / g::canvas_height) - 1.f) * R;
-	if (g::canvas_width > g::canvas_height) {
-		const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
-		p.y *= aspect;
-	} else {
-		const float aspect = static_cast<float>(g::canvas_height) / g::canvas_width;
-		p.x *= aspect;
-	}
-	g::spline::add_pt(p, *s_vao);
-}
-
 static EM_BOOL on_mouse(int eventType, const EmscriptenMouseEvent *mouseEvent, void *userData)
 {
 	UNUSED(userData);
@@ -138,7 +127,7 @@ static EM_BOOL on_mouse(int eventType, const EmscriptenMouseEvent *mouseEvent, v
 	} else if (mouseEvent->button == 0) {
 		if (eventType == EMSCRIPTEN_EVENT_MOUSEDOWN) {
 			g::mouse::is_down = true;
-			add_pt_click();
+			g::spline::edit_click(*s_control_vao, *s_curve_vao);
 		} else if (eventType == EMSCRIPTEN_EVENT_MOUSEUP) {
 			g::mouse::is_down = false;
 		}
@@ -314,7 +303,21 @@ static void gl_setup()
 	std::vector<GLuint> index_data {
 		4, 2, 0, 2, 7, 3, 6, 5, 7, 1, 7, 5, 0, 3, 1, 4, 1, 5, 4, 6, 2, 2, 6, 7, 6, 4, 5, 1, 3, 7, 0, 2, 3, 4, 0, 1
 	};
-	s_vao = new VAO(GL_LINE_STRIP, vertex_data, index_data);
+	s_control_vao = new VAO(GL_LINE_STRIP, vertex_data, index_data);
+	s_curve_vao = new VAO(GL_LINE_STRIP, vertex_data, index_data);
+	{
+		constexpr float d90 = TORAD(90.f);
+		constexpr float d180 = TORAD(180.f);
+		constexpr float d270 = TORAD(270.f);
+		const glm::vec3 x_axis { 1.f, 0.f, 0.f };
+		const glm::vec3 y_axis { 0.f, 1.f, 0.f };
+		g::ortho_rotations[g::ORTHO_RIGHT] = glm::mat4(1.f);
+		g::ortho_rotations[g::ORTHO_LEFT] = glm::rotate(glm::mat4(1.f), d180, y_axis);
+		g::ortho_rotations[g::ORTHO_TOP] = glm::rotate(glm::mat4(1.f), d90, x_axis);
+		g::ortho_rotations[g::ORTHO_BOTTOM] = glm::rotate(glm::mat4(1.f), d270, x_axis);
+		g::ortho_rotations[g::ORTHO_FRONT] = glm::rotate(glm::mat4(1.f), d90, y_axis);
+		g::ortho_rotations[g::ORTHO_BACK] = glm::rotate(glm::mat4(1.f), d270, y_axis);
+	}
 }
 
 static void update()
@@ -344,7 +347,10 @@ static void draw()
 {
 	update();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	s_vao->draw();
+	if (s_show_control_mesh) {
+		s_control_vao->draw();
+	}
+	s_curve_vao->draw();
 }
 
 int main()
