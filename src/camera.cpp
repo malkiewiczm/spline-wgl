@@ -61,16 +61,15 @@ void flush_projection()
 		glm::mat4 proj = glm::perspective(fov, aspect, 0.1f, 100.f);
 		glUniformMatrix4fv(g::u_projection, 1, false, &proj[0][0]);
 	} else {
-		float left_right = 5.f;
-		float top_bottom = 5.f;
+		constexpr float R = 5.f;
+		glm::mat4 proj = glm::ortho(-R, R, -R, R, -50.f, 50.f);
 		if (g::canvas_width > g::canvas_height) {
 			const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
-			top_bottom *= 0.5f*aspect;
+			proj = glm::scale(proj, glm::vec3(1.f, aspect, 1.f));
 		} else {
 			const float aspect = static_cast<float>(g::canvas_height) / g::canvas_width;
-			left_right *= 0.5f*aspect;
+			proj = glm::scale(proj, glm::vec3(aspect, 1.f, 1.f));
 		}
-		glm::mat4 proj = glm::ortho(-left_right, left_right, -top_bottom, top_bottom, -50.f, 50.f);
 		glUniformMatrix4fv(g::u_projection, 1, false, &proj[0][0]);
 	}
 }

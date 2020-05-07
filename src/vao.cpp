@@ -13,17 +13,8 @@ static void *attrib_index_float(const int index)
 	return reinterpret_cast<void*>(index*sizeof(float));
 }
 
-// assumes array buffer is already bound
-template <typename Vertex>
-static void fill_buffers(const std::vector<Vertex> &vertices, const std::vector<GLuint> &indices, const GLuint index_buffer)
-{
-	glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(GLuint), &indices[0], GL_STATIC_DRAW);
-}
-
 VAO::VAO(GLenum l_draw_mode, const std::vector<Vertex_PN> &vertices, const std::vector<GLuint> indices)
-	: element_count(indices.size()), draw_mode(l_draw_mode)
+	: draw_mode(l_draw_mode)
 {
 	constexpr GLuint a_position = 0;
 	constexpr GLuint a_normal = 1;
@@ -32,11 +23,11 @@ VAO::VAO(GLenum l_draw_mode, const std::vector<Vertex_PN> &vertices, const std::
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
 	glVertexAttribPointer(a_position, 3, GL_FLOAT, false, sizeof(Vertex), attrib_index_float(0));
 	glVertexAttribPointer(a_normal, 3, GL_FLOAT, false, sizeof(Vertex), attrib_index_float(3));
-	fill_buffers(vertices, indices, index_buffer);
+	update_buffers(vertices, indices);
 }
 
 VAO::VAO(GLenum l_draw_mode, const std::vector<Vertex_PT> &vertices, const std::vector<GLuint> indices)
-	: element_count(indices.size()), draw_mode(l_draw_mode)
+	: draw_mode(l_draw_mode)
 {
 	constexpr GLuint a_position = 0;
 	constexpr GLuint a_uv = 1;
@@ -45,11 +36,11 @@ VAO::VAO(GLenum l_draw_mode, const std::vector<Vertex_PT> &vertices, const std::
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
 	glVertexAttribPointer(a_position, 3, GL_FLOAT, false, sizeof(Vertex), attrib_index_float(0));
 	glVertexAttribPointer(a_uv, 2, GL_FLOAT, false, sizeof(Vertex), attrib_index_float(3));
-	fill_buffers(vertices, indices, index_buffer);
+	update_buffers(vertices, indices);
 }
 
 VAO::VAO(GLenum l_draw_mode, const std::vector<Vertex_PC> &vertices, const std::vector<GLuint> indices)
-	: element_count(indices.size()), draw_mode(l_draw_mode)
+	: draw_mode(l_draw_mode)
 {
 	constexpr GLuint a_position = 0;
 	constexpr GLuint a_color = 1;
@@ -58,7 +49,7 @@ VAO::VAO(GLenum l_draw_mode, const std::vector<Vertex_PC> &vertices, const std::
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
 	glVertexAttribPointer(a_position, 3, GL_FLOAT, false, sizeof(Vertex), attrib_index_float(0));
 	glVertexAttribPointer(a_color, 3, GL_FLOAT, false, sizeof(Vertex), attrib_index_float(3));
-	fill_buffers(vertices, indices, index_buffer);
+	update_buffers(vertices, indices);
 }
 
 void VAO::draw() const
