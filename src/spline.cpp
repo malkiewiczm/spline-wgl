@@ -38,19 +38,32 @@ static void calc_spline4(const std::vector<glm::vec3> &control_pts, std::vector<
 		const glm::vec3 &a = control_pts[i];
 		const glm::vec3 &ap = control_pts[i + 1];
 		const int b = (i - 1)*4;
+#ifdef ORIGINAL
 		c[b] = 0.75f*a + 0.125f*am + 0.125f*ap;
 		c[b + 1] = 0.75f*a + 0.25f*ap;
 		c[b + 2] = 0.5f*a + 0.5f*ap;
 		c[b + 3] = 0.25f*a + 0.75f*ap;
+#else
+		c[b] = 0.75f*a + 0.125f*am + 0.125f*ap;
+		c[b + 1] = 0.75f*a + 0.25f*ap;
+		c[b + 2] = 0.5f*a + 0.5f*ap;
+		c[b + 3] = 0.25f*a + 0.75f*ap;
+#endif
 	}
 	// last point
 	{
+#ifdef ORIGINAL
 		const int i = control_pts.size() - 2;
 		const glm::vec3 &am = control_pts[i - 1];
 		const glm::vec3 &a = control_pts[i];
 		const glm::vec3 &ap = control_pts[i + 1];
 		const int b = (i - 1)*4;
 		c[b] = 0.75f*a + 0.125f*am + 0.125f*ap;
+#else
+		const int i = control_pts.size() - 2;
+		const int b = (i - 1)*4;
+		c[b] = control_pts[i + 1];
+#endif
 	}
 	for (unsigned i = 4; i < c.size(); i += 4) {
 		const glm::vec3 l_c[5] { c[i - 4], c[i - 3], c[i - 2], c[i - 1], c[i] };
@@ -93,12 +106,8 @@ void g::spline::add_pt(const glm::vec3 &p, VAO &control_vao, VAO &curve_vao)
 	curve_vao.update_buffers(vertices, indices);
 }
 
-void g::spline::edit_click(VAO &control_vao, VAO &curve_vao)
+static void edit_click_place(VAO &control_vao, VAO &curve_vao)
 {
-	if (! g::is_edit_mode)
-		return;
-	if (g::camera3d::enabled)
-		return;
 	static glm::vec3 last_placement { 0.f, 0.f, 0.f };
 	glm::vec3 p { g::mouse::x, g::mouse::y, 0.f };
 	constexpr float R = 5.f;
@@ -140,3 +149,17 @@ void g::spline::edit_click(VAO &control_vao, VAO &curve_vao)
 	last_placement = p;
 	g::spline::add_pt(p, control_vao, curve_vao);
 }
+
+void g::spline::edit_click(VAO &control_vao, VAO &curve_vao)
+{
+	if (! g::is_edit_mode)
+		return;
+	if (g::camera3d::enabled)
+		return;
+	if (g::spline::place_when_click) {
+		edit_click_place(control_vao, curve_vao);
+		g::spline::place_when_click = false;
+	}
+}
+
+bool g::spline::place_when_click = false;

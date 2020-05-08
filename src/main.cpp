@@ -48,6 +48,9 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 		case 'H':
 			s_show_control_mesh = ! s_show_control_mesh;
 			break;
+		case 'Q':
+			g::spline::place_when_click = ! g::spline::place_when_click;
+			break;
 		case 'F':
 			new_dir = g::ORTHO_FRONT;
 			new_3d_enabled = false;
