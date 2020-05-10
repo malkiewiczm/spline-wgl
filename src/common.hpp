@@ -51,13 +51,5 @@ namespace g {
 	extern int canvas_height;
 	extern GLuint u_projection;
 	extern GLuint u_modelview;
-	extern int camera_ortho_side;
-	extern glm::mat4 ortho_rotations[6];
-	constexpr int ORTHO_RIGHT = 0;
-	constexpr int ORTHO_LEFT = 1;
-	constexpr int ORTHO_TOP = 2;
-	constexpr int ORTHO_BOTTOM = 3;
-	constexpr int ORTHO_FRONT = 4;
-	constexpr int ORTHO_BACK = 5;
 	extern bool is_edit_mode;
 }

@@ -1,68 +1,47 @@
 #include "camera.hpp"
 #include "glm/gtx/quaternion.hpp"
 
-using namespace g::camera3d;
+g::Camera g::camera;
+g::Camera3d g::camera3d;
+g::CameraOrtho g::camera_ortho;
 
-void g::camera3d::move_relative(const glm::vec3 &v)
+void g::Camera::init()
 {
-	const glm::vec3 rv = glm::rotate(glm::conjugate(g::camera3d::rotation), v);
-	g::camera3d::position += rv;
-	//g::camera3d::position += v;
+	m_kind = CAMERA3D;
+	m_dirty_projection = true;
+	m_dirty_modelview = true;
 }
 
-void g::camera3d::rotate_x(const float angle)
+void g::Camera::kind(CameraKind l_kind)
 {
-	glm::quat q = glm::angleAxis(angle, glm::vec3(1.f, 0.f, 0.f));
-	g::camera3d::rotation = q*g::camera3d::rotation;
-	//g::camera3d::rotation *= q;
+	m_kind = l_kind;
+	update_modelview();
+	update_projection();
 }
 
-void g::camera3d::rotate_y(const float angle)
+void g::Camera::update_projection()
 {
-	glm::quat q = glm::angleAxis(angle, glm::vec3(0.f, 1.f, 0.f));
-	//g::camera3d::rotation = q*g::camera3d::rotation;
-	g::camera3d::rotation *= q;
+	m_dirty_projection = true;
 }
 
-void g::camera3d::rotate_z(const float angle)
+void g::Camera::update_modelview()
 {
-	glm::quat q = glm::angleAxis(angle, glm::vec3(0.f, 0.f, 1.f));
-	g::camera3d::rotation = q*g::camera3d::rotation;
+	m_dirty_modelview = true;
 }
 
-void g::camera3d::reset()
+void g::Camera::flush_projection()
 {
-	g::camera3d::position = { 0.f, 0.f, -5.f };
-	g::camera3d::rotation = { 1.f, 0.f, 0.f, 0.f };
-}
-
-
-static bool dirty_projection = true;
-static bool dirty_modelview = true;
-
-void update_projection()
-{
-	dirty_projection = true;
-}
-
-void update_modelview()
-{
-	dirty_modelview = true;
-}
-
-void flush_projection()
-{
-	if (! dirty_projection)
+	if (! m_dirty_projection)
 		return;
-	dirty_projection = false;
-	if (g::camera3d::enabled) {
+	m_dirty_projection = false;
+	if (is_camera3d()) {
 		constexpr float fov = TORAD(45.f);
 		const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
 		glm::mat4 proj = glm::perspective(fov, aspect, 0.1f, 100.f);
 		glUniformMatrix4fv(g::u_projection, 1, false, &proj[0][0]);
 	} else {
-		constexpr float R = 5.f;
-		glm::mat4 proj = glm::ortho(-R, R, -R, R, -50.f, 50.f);
+		const float zoom = g::camera_ortho.zoom();
+		glm::mat4 proj = glm::ortho(-zoom, zoom, -zoom, zoom, -50.f, 50.f);
 		if (g::canvas_width > g::canvas_height) {
 			const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
 			proj = glm::scale(proj, glm::vec3(1.f, aspect, 1.f));
@@ -74,21 +53,95 @@ void flush_projection()
 	}
 }
 
-void flush_modelview()
+void g::Camera::flush_modelview()
 {
-	if (! dirty_modelview)
+	if (! m_dirty_modelview)
 		return;
-	dirty_modelview = false;
-	if (g::camera3d::enabled) {
-		glm::mat4 mv = glm::mat4_cast(g::camera3d::rotation);
-		mv = glm::translate(mv, g::camera3d::position);
+	m_dirty_modelview = false;
+	if (is_camera3d()) {
+		glm::mat4 mv = glm::mat4_cast(g::camera3d.rotation());
+		mv = glm::translate(mv, g::camera3d.position());
 		glUniformMatrix4fv(g::u_modelview, 1, false, &mv[0][0]);
 	} else {
-		const glm::mat4 &mv = g::ortho_rotations[g::camera_ortho_side];
+		const glm::mat4 &mv = g::camera_ortho.transformation();
 		glUniformMatrix4fv(g::u_modelview, 1, false, &mv[0][0]);
 	}
 }
 
-bool g::camera3d::enabled;
-glm::vec3 g::camera3d::position;
-glm::quat g::camera3d::rotation;
+void g::Camera3d::init()
+{
+	reset();
+}
+
+void g::Camera3d::move_relative(const glm::vec3 &v)
+{
+	const glm::vec3 rv = glm::rotate(glm::conjugate(m_rotation), v);
+	m_position += rv;
+	g::camera.update_modelview();
+}
+
+void g::Camera3d::rotate_x(const float angle)
+{
+	glm::quat q = glm::angleAxis(angle, glm::vec3(1.f, 0.f, 0.f));
+	m_rotation = q*m_rotation;
+	g::camera.update_modelview();
+}
+
+void g::Camera3d::rotate_y(const float angle)
+{
+	glm::quat q = glm::angleAxis(angle, glm::vec3(0.f, 1.f, 0.f));
+	m_rotation *= q;
+	g::camera.update_modelview();
+}
+
+void g::Camera3d::rotate_z(const float angle)
+{
+	glm::quat q = glm::angleAxis(angle, glm::vec3(0.f, 0.f, 1.f));
+	m_rotation = q*m_rotation;
+	g::camera.update_modelview();
+}
+
+void g::Camera3d::reset()
+{
+	m_position = { 0.f, 0.f, -30.f };
+	m_rotation = { 1.f, 0.f, 0.f, 0.f };
+	g::camera.update_modelview();
+}
+
+void g::CameraOrtho::init()
+{
+	constexpr float d90 = TORAD(90.f);
+	constexpr float d180 = TORAD(180.f);
+	constexpr float d270 = TORAD(270.f);
+	const glm::vec3 x_axis { 1.f, 0.f, 0.f };
+	const glm::vec3 y_axis { 0.f, 1.f, 0.f };
+	m_ortho_rotations[RIGHT] = glm::mat4(1.f);
+	m_ortho_rotations[LEFT] = glm::rotate(glm::mat4(1.f), d180, y_axis);
+	m_ortho_rotations[TOP] = glm::rotate(glm::mat4(1.f), d90, x_axis);
+	m_ortho_rotations[BOTTOM] = glm::rotate(glm::mat4(1.f), d270, x_axis);
+	m_ortho_rotations[FRONT] = glm::rotate(glm::mat4(1.f), d90, y_axis);
+	m_ortho_rotations[BACK] = glm::rotate(glm::mat4(1.f), d270, y_axis);
+	reset();
+}
+
+const glm::mat4 &g::CameraOrtho::transformation() const
+{
+	return m_ortho_rotations[m_side];
+}
+
+void g::CameraOrtho::side(OrthoSide l_side)
+{
+	if (l_side == m_side)
+		return;
+	m_side = l_side;
+	g::camera.update_modelview();
+}
+
+void g::CameraOrtho::reset()
+{
+	m_side = RIGHT;
+	m_zoom = 20.f;
+	m_translation.x = 0.f;
+	m_translation.y = 0.f;
+	g::camera.update_modelview();
+}

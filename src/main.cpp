@@ -20,7 +20,7 @@ static EM_BOOL on_resize(int eventType, const EmscriptenUiEvent *uiEvent, void *
 	g::canvas_height = uiEvent->windowInnerHeight;
 	emscripten_set_canvas_element_size("#canvas", g::canvas_width, g::canvas_height);
 	glViewport(0, 0, g::canvas_width, g::canvas_height);
-	update_projection();
+	g::camera.update_projection();
 	return true;
 }
 
@@ -36,13 +36,10 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 	else
 		keyCode = '?';
 	if (keydown) {
-		bool new_3d_enabled = g::camera3d::enabled;
-		int new_dir = g::camera_ortho_side;
 		switch (keyCode) {
 		case '1':
-			if (g::camera3d::enabled) {
-				g::camera3d::reset();
-				update_modelview();
+			if (g::camera.is_camera3d()) {
+				g::camera3d.reset();
 			}
 			break;
 		case 'H':
@@ -52,31 +49,31 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 			g::spline::place_when_click = ! g::spline::place_when_click;
 			break;
 		case 'F':
-			new_dir = g::ORTHO_FRONT;
-			new_3d_enabled = false;
+			g::camera_ortho.side(g::CameraOrtho::FRONT);
+			g::camera.kind(g::Camera::CAMERA_ORTHO);
 			break;
 		case 'B':
-			new_dir = g::ORTHO_BACK;
-			new_3d_enabled = false;
+			g::camera_ortho.side(g::CameraOrtho::BACK);
+			g::camera.kind(g::Camera::CAMERA_ORTHO);
 			break;
 		case 'R':
-			new_dir = g::ORTHO_RIGHT;
-			new_3d_enabled = false;
+			g::camera_ortho.side(g::CameraOrtho::RIGHT);
+			g::camera.kind(g::Camera::CAMERA_ORTHO);
 			break;
 		case 'L':
-			new_dir = g::ORTHO_LEFT;
-			new_3d_enabled = false;
+			g::camera_ortho.side(g::CameraOrtho::LEFT);
+			g::camera.kind(g::Camera::CAMERA_ORTHO);
 			break;
 		case 'T':
-			new_dir = g::ORTHO_TOP;
-			new_3d_enabled = false;
+			g::camera_ortho.side(g::CameraOrtho::TOP);
+			g::camera.kind(g::Camera::CAMERA_ORTHO);
 			break;
 		case 'Y':
-			new_dir = g::ORTHO_BOTTOM;
-			new_3d_enabled = false;
+			g::camera_ortho.side(g::CameraOrtho::BOTTOM);
+			g::camera.kind(g::Camera::CAMERA_ORTHO);
 			break;
 		case '3':
-			new_3d_enabled = true;
+			g::camera.kind(g::Camera::CAMERA3D);
 			break;
 		case 'W':
 			g::key::down_up = true;
@@ -91,16 +88,10 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 			g::key::down_right = true;
 			break;
 		}
-		if (new_3d_enabled != g::camera3d::enabled || new_dir != g::camera_ortho_side) {
-			g::camera3d::enabled = new_3d_enabled;
-			if (! g::camera3d::enabled && g::mouse::is_locked) {
-				emscripten_exit_pointerlock();
-			}
-			g::camera_ortho_side = new_dir;
-			update_projection();
-			update_modelview();
-			return true;
+		if (g::camera.is_camera_ortho() && g::mouse::is_locked) {
+			emscripten_exit_pointerlock();
 		}
+		return true;
 	} else {
 		switch (keyCode) {
 		case 'W':
@@ -134,7 +125,7 @@ static EM_BOOL on_mouse(int eventType, const EmscriptenMouseEvent *mouseEvent, v
 		} else if (eventType == EMSCRIPTEN_EVENT_MOUSEUP) {
 			g::mouse::is_down = false;
 		}
-	} else if (mouseEvent->button == 2 && eventType == EMSCRIPTEN_EVENT_MOUSEDOWN && g::camera3d::enabled) {
+	} else if (mouseEvent->button == 2 && eventType == EMSCRIPTEN_EVENT_MOUSEDOWN && g::camera.is_camera3d()) {
 		if (g::mouse::is_locked) {
 			emscripten_exit_pointerlock();
 		} else {
@@ -142,12 +133,11 @@ static EM_BOOL on_mouse(int eventType, const EmscriptenMouseEvent *mouseEvent, v
 		}
 		g::key::release_all();
 	}
-	if (eventType == EMSCRIPTEN_EVENT_MOUSEMOVE && g::camera3d::enabled && g::mouse::is_locked) {
+	if (eventType == EMSCRIPTEN_EVENT_MOUSEMOVE && g::camera.is_camera3d() && g::mouse::is_locked) {
 		glm::vec2 m { mouseEvent->movementX, mouseEvent->movementY };
 		m /= 400.f;
-		g::camera3d::rotate_y(m.x);
-		g::camera3d::rotate_x(m.y);
-		update_modelview();
+		g::camera3d.rotate_y(m.x);
+		g::camera3d.rotate_x(m.y);
 	}
 	return true;
 }
@@ -274,10 +264,10 @@ void main()\n\
 	emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, on_mouse);
 	emscripten_set_mouseleave_callback("canvas", nullptr, false, on_mouse);
 	emscripten_set_pointerlockchange_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, on_pointerlock);
-	g::camera3d::enabled = true;
-	g::camera_ortho_side = g::ORTHO_RIGHT;
+	g::camera.init();
+	g::camera3d.init();
+	g::camera_ortho.init();
 	g::is_edit_mode = true;
-	g::camera3d::reset();
 	{
 		// calling this event updates the projection
 		EmscriptenUiEvent evt;
@@ -285,7 +275,6 @@ void main()\n\
 		evt.windowInnerHeight = 920;
 		on_resize(EMSCRIPTEN_EVENT_RESIZE, &evt, nullptr);
 	}
-	update_modelview();
 }
 
 static void gl_setup()
@@ -308,42 +297,25 @@ static void gl_setup()
 	};
 	s_control_vao = new VAO(GL_LINE_STRIP, vertex_data, index_data);
 	s_curve_vao = new VAO(GL_LINE_STRIP, vertex_data, index_data);
-	{
-		constexpr float d90 = TORAD(90.f);
-		constexpr float d180 = TORAD(180.f);
-		constexpr float d270 = TORAD(270.f);
-		const glm::vec3 x_axis { 1.f, 0.f, 0.f };
-		const glm::vec3 y_axis { 0.f, 1.f, 0.f };
-		g::ortho_rotations[g::ORTHO_RIGHT] = glm::mat4(1.f);
-		g::ortho_rotations[g::ORTHO_LEFT] = glm::rotate(glm::mat4(1.f), d180, y_axis);
-		g::ortho_rotations[g::ORTHO_TOP] = glm::rotate(glm::mat4(1.f), d90, x_axis);
-		g::ortho_rotations[g::ORTHO_BOTTOM] = glm::rotate(glm::mat4(1.f), d270, x_axis);
-		g::ortho_rotations[g::ORTHO_FRONT] = glm::rotate(glm::mat4(1.f), d90, y_axis);
-		g::ortho_rotations[g::ORTHO_BACK] = glm::rotate(glm::mat4(1.f), d270, y_axis);
-	}
 }
 
 static void update()
 {
-	constexpr float move_speed = 0.1f;
+	constexpr float move_speed = 0.2f;
 	if (g::key::down_up) {
-		g::camera3d::move_relative({ 0., 0., move_speed });
-		update_modelview();
+		g::camera3d.move_relative({ 0., 0., move_speed });
 	}
 	if (g::key::down_down) {
-		g::camera3d::move_relative({ 0., 0., -move_speed });
-		update_modelview();
+		g::camera3d.move_relative({ 0., 0., -move_speed });
 	}
 	if (g::key::down_left) {
-		g::camera3d::move_relative({ move_speed, 0., 0. });
-		update_modelview();
+		g::camera3d.move_relative({ move_speed, 0., 0. });
 	}
 	if (g::key::down_right) {
-		g::camera3d::move_relative({ -move_speed, 0., 0. });
-		update_modelview();
+		g::camera3d.move_relative({ -move_speed, 0., 0. });
 	}
-	flush_modelview();
-	flush_projection();
+	g::camera.flush_modelview();
+	g::camera.flush_projection();
 }
 
 static void draw()

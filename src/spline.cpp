@@ -143,9 +143,9 @@ static void edit_click_place(VAO &control_vao, VAO &curve_vao)
 {
 	static glm::vec3 last_placement { 0.f, 0.f, 0.f };
 	glm::vec3 p { g::mouse::x, g::mouse::y, 0.f };
-	constexpr float R = 5.f;
-	p.x = (2.f*(p.x / g::canvas_width) - 1.f)*R;
-	p.y = -(2.f*(p.y / g::canvas_height) - 1.f)*R;
+	const float zoom = g::camera_ortho.zoom();
+	p.x = (2.f*(p.x / g::canvas_width) - 1.f)*zoom;
+	p.y = -(2.f*(p.y / g::canvas_height) - 1.f)*zoom;
 	if (g::canvas_width > g::canvas_height) {
 		const float aspect = static_cast<float>(g::canvas_height) / g::canvas_width;
 		p.y *= aspect;
@@ -153,26 +153,26 @@ static void edit_click_place(VAO &control_vao, VAO &curve_vao)
 		const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
 		p.x *= aspect;
 	}
-	if (g::camera_ortho_side == g::ORTHO_TOP || g::camera_ortho_side == g::ORTHO_BOTTOM) {
+	if (g::camera_ortho.side() == g::CameraOrtho::TOP || g::camera_ortho.side() == g::CameraOrtho::BOTTOM) {
 		p.y = -p.y;
 	}
-	if (g::camera_ortho_side == g::ORTHO_FRONT || g::camera_ortho_side == g::ORTHO_BACK) {
+	if (g::camera_ortho.side() == g::CameraOrtho::FRONT || g::camera_ortho.side() == g::CameraOrtho::BACK) {
 		p.x = -p.x;
 	}
 	{
-		const glm::mat4 &mv = g::ortho_rotations[g::camera_ortho_side];
+		const glm::mat4 &mv =g::camera_ortho.transformation();
 		glm::vec4 v4 { p.x, p.y, p.z, 1. };
 		v4 = mv*v4;
 		p.x = v4.x;
 		p.y = v4.y;
 		p.z = v4.z;
-		switch (g::camera_ortho_side) {
-		case g::ORTHO_RIGHT:
-		case g::ORTHO_LEFT:
+		switch (g::camera_ortho.side()) {
+		case g::CameraOrtho::RIGHT:
+		case g::CameraOrtho::LEFT:
 			p.z = last_placement.z;
 			break;
-		case g::ORTHO_TOP:
-		case g::ORTHO_BOTTOM:
+		case g::CameraOrtho::TOP:
+		case g::CameraOrtho::BOTTOM:
 			p.y = last_placement.y;
 			break;
 		default:
@@ -187,7 +187,7 @@ void g::spline::edit_click(VAO &control_vao, VAO &curve_vao)
 {
 	if (! g::is_edit_mode)
 		return;
-	if (g::camera3d::enabled)
+	if (! g::camera.is_camera_ortho())
 		return;
 	if (g::spline::place_when_click) {
 		edit_click_place(control_vao, curve_vao);
