@@ -9,8 +9,8 @@
 #include "spline.hpp"
 
 static bool s_show_control_mesh = true;
-static VAO *s_control_vao;
-static VAO *s_curve_vao;
+static VAO s_control_vao;
+static VAO s_curve_vao;
 
 static EM_BOOL on_resize(int eventType, const EmscriptenUiEvent *uiEvent, void *userData)
 {
@@ -140,7 +140,7 @@ static EM_BOOL on_mouse(int eventType, const EmscriptenMouseEvent *mouseEvent, v
 	} else if (mouseEvent->button == 0) {
 		if (eventType == EMSCRIPTEN_EVENT_MOUSEDOWN) {
 			g::mouse.down(true);
-			g::spline.edit_click(*s_control_vao, *s_curve_vao);
+			g::spline.edit_click(s_control_vao, s_curve_vao);
 		} else if (eventType == EMSCRIPTEN_EVENT_MOUSEUP) {
 			g::mouse.down(false);
 		}
@@ -314,8 +314,14 @@ static void gl_setup()
 	std::vector<GLuint> index_data {
 		4, 2, 0, 2, 7, 3, 6, 5, 7, 1, 7, 5, 0, 3, 1, 4, 1, 5, 4, 6, 2, 2, 6, 7, 6, 4, 5, 1, 3, 7, 0, 2, 3, 4, 0, 1
 	};
-	s_control_vao = new VAO(GL_LINE_STRIP, vertex_data, index_data);
-	s_curve_vao = new VAO(GL_LINE_STRIP, vertex_data, index_data);
+	s_control_vao.gen_buffers();
+	s_control_vao.draw_mode(GL_LINE_STRIP);
+	s_control_vao.update_buffers(vertex_data, index_data);
+	s_control_vao.kind(VAO::KIND_PC);
+	s_curve_vao.gen_buffers();
+	s_curve_vao.draw_mode(GL_LINE_STRIP);
+	s_curve_vao.update_buffers(vertex_data, index_data);
+	s_curve_vao.kind(VAO::KIND_PC);
 }
 
 static void update()
@@ -342,9 +348,9 @@ static void draw()
 	update();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	if (s_show_control_mesh) {
-		s_control_vao->draw();
+		s_control_vao.draw();
 	}
-	s_curve_vao->draw();
+	s_curve_vao.draw();
 }
 
 int main()

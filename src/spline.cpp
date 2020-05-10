@@ -73,9 +73,14 @@ static bool cmp_distance(const g::Spline::Piece &p, const float d)
 
 g::Spline::Piece g::Spline::get_piece(const float distance)
 {
-	auto iter = std::lower_bound(curve_pts.begin(), curve_pts.end(), distance, cmp_distance);
 	Piece ret;
 	ret.distance = distance;
+	if (curve_pts.size() <= 1) {
+		ret.position = glm::vec3(0.f);
+		ret.tangent = glm::vec3(0.f, 1.f, 0.f);
+		return ret;
+	}
+	auto iter = std::lower_bound(curve_pts.begin(), curve_pts.end(), distance, cmp_distance);
 	if (iter == curve_pts.begin()) {
 		// implies that a negative distance was given
 		const Piece &p = curve_pts.front();

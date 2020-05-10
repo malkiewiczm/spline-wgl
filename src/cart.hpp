@@ -4,9 +4,15 @@
 #include "vao.hpp"
 
 namespace g {
-	namespace cart {
-		extern VAO *vao;
+	class Cart {
+	public:
+		void init();
+		VAO vao;
 		void step(float dt);
 		void draw();
-	}
+	private:
+		float m_position;
+		float m_velocity;
+	};
+	extern Cart cart;
 }

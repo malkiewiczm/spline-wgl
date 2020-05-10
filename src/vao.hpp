@@ -18,25 +18,27 @@ struct Vertex_PC {
 };
 
 class VAO {
-private:
-	GLuint vertex_buffer;
-	GLuint index_buffer;
-	int element_count;
-	const GLenum draw_mode;
-	const int kind;
-	void context_switch() const;
-	void gen_buffers();
 public:
+	enum VAOKind {
+		KIND_PN, KIND_PT, KIND_PC
+	};
 	template <typename Vertex>
 	void update_buffers(const std::vector<Vertex> &vertices, const std::vector<GLuint> &indices) {
-		glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, m_vertex_buffer);
 		glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_index_buffer);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(GLuint), &indices[0], GL_STATIC_DRAW);
-		element_count = indices.size();
+		m_element_count = indices.size();
 	}
-	VAO(GLenum l_draw_mode, const std::vector<Vertex_PN> &vertices, const std::vector<GLuint> indices);
-	VAO(GLenum l_draw_mode, const std::vector<Vertex_PT> &vertices, const std::vector<GLuint> indices);
-	VAO(GLenum l_draw_mode, const std::vector<Vertex_PC> &vertices, const std::vector<GLuint> indices);
+	void gen_buffers();
 	void draw() const;
+	LAZY_ACCESSOR(GLenum, draw_mode)
+	LAZY_ACCESSOR(VAOKind, kind)
+private:
+	GLuint m_vertex_buffer;
+	GLuint m_index_buffer;
+	int m_element_count;
+	GLenum m_draw_mode;
+	VAOKind m_kind;
+	void context_switch() const;
 };
