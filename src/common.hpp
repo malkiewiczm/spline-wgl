@@ -21,6 +21,13 @@ void _die(const char *msg, const char *file, int line);
 #define TORAD(a) (0.0174532f * (a))
 #define TODEG(a) (57.295779f * (a))
 
+#define LAZY_SET(type, name) void name(type l_ ## name) { m_ ## name = l_ ## name; }
+#define LAZY_SETR(type, name) void name(const type &l_ ## name) { m_ ## name = l_ ## name; }
+#define LAZY_GET(type, name) type name() const { return m_ ## name; }
+#define LAZY_GETR(type, name) const type &name() const { return m_ ## name; }
+#define LAZY_ACCESSOR(type, name) LAZY_GET(type, name) LAZY_SET(type, name)
+#define LAZY_ACCESSORR(type, name) LAZY_GETR(type, name) LAZY_SETR(type, name)
+
 template <typename T>
 static inline std::ostream &operator<< (std::ostream &o, const std::vector<T> &v)
 {

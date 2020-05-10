@@ -3,11 +3,13 @@
 #include "mouse.hpp"
 #include <algorithm>
 
+g::Spline g::spline;
+
 template<int deg>
-static g::spline::Piece decasteljau(const glm::vec3 c[deg + 1], const float u)
+static g::Spline::Piece decasteljau(const glm::vec3 c[deg + 1], const float u)
 {
 	const float v = 1.f - u;
-	g::spline::Piece dp[deg + 1];
+	g::Spline::Piece dp[deg + 1];
 	for (int i = 0; i <= deg; ++i) {
 		dp[i].position = c[i];
 	}
@@ -21,7 +23,7 @@ static g::spline::Piece decasteljau(const glm::vec3 c[deg + 1], const float u)
 }
 
 template<int deg>
-static void append_bezier(std::vector<g::spline::Piece> &pts, const glm::vec3 c[deg + 1])
+static void append_bezier(std::vector<g::Spline::Piece> &pts, const glm::vec3 c[deg + 1])
 {
 	constexpr int num_segs = 30;
 	for (int i = 0; i <= num_segs; ++i) {
@@ -30,7 +32,8 @@ static void append_bezier(std::vector<g::spline::Piece> &pts, const glm::vec3 c[
 	}
 }
 
-static void calc_spline3(const std::vector<glm::vec3> &control_pts, std::vector<g::spline::Piece> &pts)
+static void calc_spline3(const std::vector<glm::vec3> &control_pts, std::vector<g::Spline::Piece> &pts)
+
 {
 	if (control_pts.size() < 4)
 		return;
@@ -63,32 +66,29 @@ static void calc_spline3(const std::vector<glm::vec3> &control_pts, std::vector<
 #endif
 }
 
-static std::vector<g::spline::Piece> curve_pts;
-static std::vector<glm::vec3> control_pts;
-
-static bool cmp_distance(const g::spline::Piece &p, const float d)
+static bool cmp_distance(const g::Spline::Piece &p, const float d)
 {
 	return p.distance < d;
 }
 
-g::spline::Piece g::spline::get_piece(const float distance)
+g::Spline::Piece g::Spline::get_piece(const float distance)
 {
 	auto iter = std::lower_bound(curve_pts.begin(), curve_pts.end(), distance, cmp_distance);
-	g::spline::Piece ret;
+	Piece ret;
 	ret.distance = distance;
 	if (iter == curve_pts.begin()) {
 		// implies that a negative distance was given
-		const g::spline::Piece &p = curve_pts.front();
+		const Piece &p = curve_pts.front();
 		ret.tangent = p.tangent;
 		ret.position = p.position + p.tangent*distance;
 	} else if (iter == curve_pts.end()) {
 		// implies that a distance greater than the curve length was given
-		const g::spline::Piece &p = curve_pts.back();
+		const Piece &p = curve_pts.back();
 		ret.tangent = p.tangent;
 		ret.position = p.position + p.tangent*distance;
 	} else {
-		const g::spline::Piece &p0 = *(iter - 1);
-		const g::spline::Piece &p1 = *iter;
+		const Piece &p0 = *(iter - 1);
+		const Piece &p1 = *iter;
 		const float t = (distance - p0.distance) / (p1.distance - p0.distance);
 		ret.tangent = glm::mix(p0.tangent, p1.tangent, t);
 		ret.position = glm::mix(p0.position, p1.position, t);
@@ -96,16 +96,7 @@ g::spline::Piece g::spline::get_piece(const float distance)
 	return ret;
 }
 
-static void calc_path_length()
-{
-	curve_pts[0].distance = 0.f;
-	for (unsigned i = 1; i < curve_pts.size(); ++i) {
-		const float delta = glm::distance(curve_pts[i - 1].position, curve_pts[i].position);
-		curve_pts[i].distance = curve_pts[i - 1].distance + delta;
-	}
-}
-
-void g::spline::add_pt(const glm::vec3 &p, VAO &control_vao, VAO &curve_vao)
+void g::Spline::add_pt(const glm::vec3 &p, VAO &control_vao, VAO &curve_vao)
 {
 	control_pts.push_back(p);
 	if (control_pts.size() <= 1)
@@ -135,14 +126,21 @@ void g::spline::add_pt(const glm::vec3 &p, VAO &control_vao, VAO &curve_vao)
 	for (unsigned i = 0; i < indices.size(); ++i) {
 		indices[i] = i;
 	}
-	calc_path_length();
+	// calculate path length
+	{
+		curve_pts[0].distance = 0.f;
+		for (unsigned i = 1; i < curve_pts.size(); ++i) {
+				const float delta = glm::distance(curve_pts[i - 1].position, curve_pts[i].position);
+			curve_pts[i].distance = curve_pts[i - 1].distance + delta;
+		}
+	}
 	curve_vao.update_buffers(vertices, indices);
 }
 
-static void edit_click_place(VAO &control_vao, VAO &curve_vao)
+void g::Spline::edit_click_place(VAO &control_vao, VAO &curve_vao)
 {
 	static glm::vec3 last_placement { 0.f, 0.f, 0.f };
-	glm::vec3 p { g::mouse::x, g::mouse::y, 0.f };
+	glm::vec3 p { g::mouse.x(), g::mouse.y(), 0.f };
 	const float zoom = g::camera_ortho.zoom();
 	p.x = (2.f*(p.x / g::canvas_width) - 1.f)*zoom;
 	p.y = -(2.f*(p.y / g::canvas_height) - 1.f)*zoom;
@@ -180,19 +178,17 @@ static void edit_click_place(VAO &control_vao, VAO &curve_vao)
 		}
 	}
 	last_placement = p;
-	g::spline::add_pt(p, control_vao, curve_vao);
+	add_pt(p, control_vao, curve_vao);
 }
 
-void g::spline::edit_click(VAO &control_vao, VAO &curve_vao)
+void g::Spline::edit_click(VAO &control_vao, VAO &curve_vao)
 {
 	if (! g::is_edit_mode)
 		return;
 	if (! g::camera.is_camera_ortho())
 		return;
-	if (g::spline::place_when_click) {
+	if (m_place_when_click) {
 		edit_click_place(control_vao, curve_vao);
-		g::spline::place_when_click = false;
+		m_place_when_click = false;
 	}
 }
-
-bool g::spline::place_when_click = false;

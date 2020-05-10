@@ -9,10 +9,8 @@ namespace g {
 			CAMERA3D, CAMERA_ORTHO
 		};
 		void init();
+		LAZY_GET(CameraKind, kind)
 		void kind(CameraKind l_kind);
-		CameraKind kind() const {
-			return m_kind;
-		}
 		bool is_camera3d() const {
 			return m_kind == CAMERA3D;
 		}
@@ -31,12 +29,8 @@ namespace g {
 	class Camera3d {
 	public:
 		void init();
-		const glm::vec3 &position() const {
-			return m_position;
-		}
-		const glm::quat &rotation() const {
-			return m_rotation;
-		}
+		LAZY_GETR(glm::vec3, position)
+		LAZY_GETR(glm::quat, rotation)
 		void move_relative(const glm::vec3 &v);
 		void rotate_x(const float angle);
 		void rotate_y(const float angle);
@@ -53,13 +47,9 @@ namespace g {
 		};
 		void init();
 		const glm::mat4 &transformation() const;
-		float zoom() const {
-			return m_zoom;
-		}
+		LAZY_GET(float, zoom)
+		LAZY_GET(OrthoSide, side)
 		void side(OrthoSide l_side);
-		OrthoSide side() const {
-			return m_side;
-		}
 		void reset();
 	private:
 		glm::mat4 m_ortho_rotations[6];

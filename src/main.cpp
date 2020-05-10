@@ -36,62 +36,81 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 	else
 		keyCode = '?';
 	if (keydown) {
+		bool ret = false;
 		switch (keyCode) {
 		case '1':
 			if (g::camera.is_camera3d()) {
 				g::camera3d.reset();
+			} else if (g::camera.is_camera_ortho()) {
+				g::camera_ortho.reset();
 			}
+			ret = true;
 			break;
 		case 'H':
 			s_show_control_mesh = ! s_show_control_mesh;
+			ret = true;
 			break;
 		case 'Q':
-			g::spline::place_when_click = ! g::spline::place_when_click;
+			g::spline.place_when_click( ! g::spline.place_when_click());
+			ret = true;
 			break;
 		case 'F':
 			g::camera_ortho.side(g::CameraOrtho::FRONT);
 			g::camera.kind(g::Camera::CAMERA_ORTHO);
+			ret = true;
 			break;
 		case 'B':
 			g::camera_ortho.side(g::CameraOrtho::BACK);
 			g::camera.kind(g::Camera::CAMERA_ORTHO);
+			ret = true;
 			break;
 		case 'R':
 			g::camera_ortho.side(g::CameraOrtho::RIGHT);
 			g::camera.kind(g::Camera::CAMERA_ORTHO);
+			ret = true;
 			break;
 		case 'L':
 			g::camera_ortho.side(g::CameraOrtho::LEFT);
 			g::camera.kind(g::Camera::CAMERA_ORTHO);
+			ret = true;
 			break;
 		case 'T':
 			g::camera_ortho.side(g::CameraOrtho::TOP);
 			g::camera.kind(g::Camera::CAMERA_ORTHO);
+			ret = true;
 			break;
 		case 'Y':
 			g::camera_ortho.side(g::CameraOrtho::BOTTOM);
 			g::camera.kind(g::Camera::CAMERA_ORTHO);
+			ret = true;
 			break;
 		case '3':
 			g::camera.kind(g::Camera::CAMERA3D);
+			ret = true;
 			break;
 		case 'W':
 			g::key::down_up = true;
+			ret = true;
 			break;
 		case 'A':
 			g::key::down_left = true;
+			ret = true;
 			break;
 		case 'S':
 			g::key::down_down = true;
+			ret = true;
 			break;
 		case 'D':
 			g::key::down_right = true;
+			ret = true;
 			break;
 		}
-		if (g::camera.is_camera_ortho() && g::mouse::is_locked) {
-			emscripten_exit_pointerlock();
+		if (ret) {
+			if (g::camera.is_camera_ortho() && g::mouse.locked()) {
+				emscripten_exit_pointerlock();
+			}
+			return true;
 		}
-		return true;
 	} else {
 		switch (keyCode) {
 		case 'W':
@@ -114,26 +133,26 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 static EM_BOOL on_mouse(int eventType, const EmscriptenMouseEvent *mouseEvent, void *userData)
 {
 	UNUSED(userData);
-	g::mouse::x = mouseEvent->clientX;
-	g::mouse::y = mouseEvent->clientY;
+	g::mouse.x(mouseEvent->clientX);
+	g::mouse.y(mouseEvent->clientY);
 	if (eventType == EMSCRIPTEN_EVENT_MOUSELEAVE) {
-		g::mouse::is_down = false;
+		g::mouse.down(false);
 	} else if (mouseEvent->button == 0) {
 		if (eventType == EMSCRIPTEN_EVENT_MOUSEDOWN) {
-			g::mouse::is_down = true;
-			g::spline::edit_click(*s_control_vao, *s_curve_vao);
+			g::mouse.down(true);
+			g::spline.edit_click(*s_control_vao, *s_curve_vao);
 		} else if (eventType == EMSCRIPTEN_EVENT_MOUSEUP) {
-			g::mouse::is_down = false;
+			g::mouse.down(false);
 		}
 	} else if (mouseEvent->button == 2 && eventType == EMSCRIPTEN_EVENT_MOUSEDOWN && g::camera.is_camera3d()) {
-		if (g::mouse::is_locked) {
+		if (g::mouse.locked()) {
 			emscripten_exit_pointerlock();
 		} else {
 			emscripten_request_pointerlock("canvas", false);
 		}
 		g::key::release_all();
 	}
-	if (eventType == EMSCRIPTEN_EVENT_MOUSEMOVE && g::camera.is_camera3d() && g::mouse::is_locked) {
+	if (eventType == EMSCRIPTEN_EVENT_MOUSEMOVE && g::camera.is_camera3d() && g::mouse.locked()) {
 		glm::vec2 m { mouseEvent->movementX, mouseEvent->movementY };
 		m /= 400.f;
 		g::camera3d.rotate_y(m.x);
@@ -146,7 +165,7 @@ static EM_BOOL on_pointerlock(int eventType, const EmscriptenPointerlockChangeEv
 {
 	UNUSED(eventType);
 	UNUSED(userData);
-	g::mouse::is_locked = pointerlockChangeEvent->isActive;
+	g::mouse.locked(pointerlockChangeEvent->isActive);
 	return true;
 }
 
