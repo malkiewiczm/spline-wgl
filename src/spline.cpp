@@ -21,54 +21,44 @@ static glm::vec3 decasteljau(const glm::vec3 c[deg + 1], const float u)
 template<int deg>
 static void append_bezier(std::vector<glm::vec3> &pts, const glm::vec3 c[deg + 1])
 {
-	constexpr int num_segs = 20;
+	constexpr int num_segs = 30;
 	for (int i = 0; i <= num_segs; ++i) {
 		const float u = i / static_cast<float>(num_segs);
 		pts.push_back(decasteljau<deg>(c, u));
 	}
 }
 
-static void calc_spline4(const std::vector<glm::vec3> &control_pts, std::vector<glm::vec3> &pts)
+static void calc_spline3(const std::vector<glm::vec3> &control_pts, std::vector<glm::vec3> &pts)
 {
 	if (control_pts.size() < 4)
 		return;
-	std::vector<glm::vec3> c((control_pts.size() - 3)*4 + 1);
-	for (unsigned i = 1; i < control_pts.size() - 2; ++i) {
+	constexpr int deg = 3;
+	std::vector<glm::vec3> c((control_pts.size() - 3)*deg + 1);
+	const unsigned last_i = control_pts.size() - 2;
+	for (unsigned i = 1; ; ++i) {
 		const glm::vec3 &am = control_pts[i - 1];
 		const glm::vec3 &a = control_pts[i];
 		const glm::vec3 &ap = control_pts[i + 1];
-		const int b = (i - 1)*4;
-#ifdef ORIGINAL
-		c[b] = 0.75f*a + 0.125f*am + 0.125f*ap;
-		c[b + 1] = 0.75f*a + 0.25f*ap;
-		c[b + 2] = 0.5f*a + 0.5f*ap;
-		c[b + 3] = 0.25f*a + 0.75f*ap;
+		const int b = (i - 1)*deg;
+		const glm::vec3 r0 = glm::mix(am, a, 2.f/3.f);
+		const glm::vec3 r1 = glm::mix(a, ap, 1.f/3.f);
+		c[b] = glm::mix(r0, r1, 0.5f);
+		if (i == last_i)
+			break;
+		c[b + 1] = r1;
+		c[b + 2] = glm::mix(a, ap, 2.f/3.f);
+	}
+#define MAKE_CURVES
+#ifdef MAKE_CURVES
+	for (unsigned i = deg; i < c.size(); i += deg) {
+		const glm::vec3 l_c[deg + 1] { c[i - 3], c[i - 2], c[i - 1], c[i] };
+		append_bezier<deg>(pts, l_c);
+	}
 #else
-		c[b] = 0.75f*a + 0.125f*am + 0.125f*ap;
-		c[b + 1] = 0.75f*a + 0.25f*ap;
-		c[b + 2] = 0.5f*a + 0.5f*ap;
-		c[b + 3] = 0.25f*a + 0.75f*ap;
+	for (unsigned i = 0; i < c.size(); ++i) {
+		pts.push_back(c[i]);
+	}
 #endif
-	}
-	// last point
-	{
-#ifdef ORIGINAL
-		const int i = control_pts.size() - 2;
-		const glm::vec3 &am = control_pts[i - 1];
-		const glm::vec3 &a = control_pts[i];
-		const glm::vec3 &ap = control_pts[i + 1];
-		const int b = (i - 1)*4;
-		c[b] = 0.75f*a + 0.125f*am + 0.125f*ap;
-#else
-		const int i = control_pts.size() - 2;
-		const int b = (i - 1)*4;
-		c[b] = control_pts[i + 1];
-#endif
-	}
-	for (unsigned i = 4; i < c.size(); i += 4) {
-		const glm::vec3 l_c[5] { c[i - 4], c[i - 3], c[i - 2], c[i - 1], c[i] };
-		append_bezier<4>(pts, l_c);
-	}
 }
 
 static std::vector<glm::vec3> control_pts;
@@ -81,7 +71,7 @@ void g::spline::add_pt(const glm::vec3 &p, VAO &control_vao, VAO &curve_vao)
 	const glm::vec3 control_color { 0.5f, 0.f, 0.f };
 	const glm::vec3 curve_color { 0.f, 0.5f, 0.5f };
 	std::vector<glm::vec3> curve_pts;
-	calc_spline4(control_pts, curve_pts);
+	calc_spline3(control_pts, curve_pts);
 	std::vector<Vertex_PC> vertices(control_pts.size());
 	std::vector<GLuint> indices(vertices.size());
 	for (unsigned i = 0; i < vertices.size(); ++i) {

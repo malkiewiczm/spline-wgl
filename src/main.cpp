@@ -281,8 +281,8 @@ void main()\n\
 	{
 		// calling this event updates the projection
 		EmscriptenUiEvent evt;
-		evt.windowInnerWidth = 800;
-		evt.windowInnerHeight = 600;
+		evt.windowInnerWidth = 1112;
+		evt.windowInnerHeight = 920;
 		on_resize(EMSCRIPTEN_EVENT_RESIZE, &evt, nullptr);
 	}
 	update_modelview();
