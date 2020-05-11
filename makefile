@@ -167,7 +167,7 @@ build/camera.o: src/camera.cpp src/camera.hpp src/common.hpp \
  src/glm/gtc/../ext/quaternion_transform.hpp \
  src/glm/gtc/../ext/quaternion_transform.inl src/glm/gtc/quaternion.inl \
  src/glm/gtc/epsilon.hpp src/glm/gtc/../detail/setup.hpp \
- src/glm/gtc/epsilon.inl src/glm/gtx/quaternion.hpp \
+ src/glm/gtc/epsilon.inl src/shader.hpp src/glm/gtx/quaternion.hpp \
  src/glm/gtx/../ext/quaternion_exponential.hpp \
  src/glm/gtx/../ext/quaternion_exponential.inl \
  src/glm/gtx/../gtx/norm.hpp src/glm/gtx/../gtx/../gtx/component_wise.hpp \
@@ -324,7 +324,7 @@ build/cart.o: src/cart.cpp src/cart.hpp src/common.hpp src/glm/glm.hpp \
  src/glm/gtc/../ext/quaternion_transform.hpp \
  src/glm/gtc/../ext/quaternion_transform.inl src/glm/gtc/quaternion.inl \
  src/glm/gtc/epsilon.hpp src/glm/gtc/../detail/setup.hpp \
- src/glm/gtc/epsilon.inl src/vao.hpp
+ src/glm/gtc/epsilon.inl src/vao.hpp src/spline.hpp
 build/common.o: src/common.cpp src/common.hpp src/glm/glm.hpp \
  src/glm/detail/_fixes.hpp src/glm/detail/setup.hpp \
  src/glm/detail/../simd/platform.h src/glm/fwd.hpp \
@@ -778,7 +778,7 @@ build/main.o: src/main.cpp src/shader.hpp src/common.hpp src/glm/glm.hpp \
  src/glm/gtc/../ext/quaternion_transform.inl src/glm/gtc/quaternion.inl \
  src/glm/gtc/epsilon.hpp src/glm/gtc/../detail/setup.hpp \
  src/glm/gtc/epsilon.inl src/vao.hpp src/camera.hpp src/mouse.hpp \
- src/key.hpp src/spline.hpp
+ src/key.hpp src/spline.hpp src/cart.hpp
 build/mouse.o: src/mouse.cpp src/mouse.hpp src/common.hpp src/glm/glm.hpp \
  src/glm/detail/_fixes.hpp src/glm/detail/setup.hpp \
  src/glm/detail/../simd/platform.h src/glm/fwd.hpp \
@@ -930,8 +930,8 @@ build/mouse.o: src/mouse.cpp src/mouse.hpp src/common.hpp src/glm/glm.hpp \
  src/glm/gtc/../ext/quaternion_transform.inl src/glm/gtc/quaternion.inl \
  src/glm/gtc/epsilon.hpp src/glm/gtc/../detail/setup.hpp \
  src/glm/gtc/epsilon.inl
-build/shader.o: src/shader.cpp src/shader.hpp src/common.hpp \
- src/glm/glm.hpp src/glm/detail/_fixes.hpp src/glm/detail/setup.hpp \
+build/shader.o: src/shader.cpp src/common.hpp src/glm/glm.hpp \
+ src/glm/detail/_fixes.hpp src/glm/detail/setup.hpp \
  src/glm/detail/../simd/platform.h src/glm/fwd.hpp \
  src/glm/detail/qualifier.hpp src/glm/detail/setup.hpp src/glm/vec2.hpp \
  src/glm/./ext/vector_bool2.hpp src/glm/./ext/../detail/type_vec2.hpp \
@@ -1080,7 +1080,7 @@ build/shader.o: src/shader.cpp src/shader.hpp src/common.hpp \
  src/glm/gtc/../ext/quaternion_transform.hpp \
  src/glm/gtc/../ext/quaternion_transform.inl src/glm/gtc/quaternion.inl \
  src/glm/gtc/epsilon.hpp src/glm/gtc/../detail/setup.hpp \
- src/glm/gtc/epsilon.inl
+ src/glm/gtc/epsilon.inl src/shader.hpp src/camera.hpp
 build/spline.o: src/spline.cpp src/spline.hpp src/common.hpp \
  src/glm/glm.hpp src/glm/detail/_fixes.hpp src/glm/detail/setup.hpp \
  src/glm/detail/../simd/platform.h src/glm/fwd.hpp \
@@ -1382,4 +1382,4 @@ build/vao.o: src/vao.cpp src/vao.hpp src/common.hpp src/glm/glm.hpp \
  src/glm/gtc/../ext/quaternion_transform.hpp \
  src/glm/gtc/../ext/quaternion_transform.inl src/glm/gtc/quaternion.inl \
  src/glm/gtc/epsilon.hpp src/glm/gtc/../detail/setup.hpp \
- src/glm/gtc/epsilon.inl
+ src/glm/gtc/epsilon.inl src/shader.hpp

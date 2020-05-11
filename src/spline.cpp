@@ -13,12 +13,14 @@ static g::Spline::Piece decasteljau(const glm::vec3 c[deg + 1], const float u)
 	for (int i = 0; i <= deg; ++i) {
 		dp[i].position = c[i];
 	}
-	for (int d = deg; d >= 1; --d) {
+	for (int d = deg; d >= 2; --d) {
 		for (int i = 0; i < d; ++i) {
 			dp[i].position = dp[i].position*v + dp[i + 1].position*u;
 		}
 	}
+	// d = 1
 	dp[0].tangent = glm::normalize(dp[1].position - dp[0].position);
+	dp[0].position = dp[0].position*v + dp[1].position*u;
 	return dp[0];
 }
 
@@ -90,7 +92,7 @@ g::Spline::Piece g::Spline::get_piece(const float distance)
 		// implies that a distance greater than the curve length was given
 		const Piece &p = curve_pts.back();
 		ret.tangent = p.tangent;
-		ret.position = p.position + p.tangent*distance;
+		ret.position = p.position + p.tangent*(distance - p.distance);
 	} else {
 		const Piece &p0 = *(iter - 1);
 		const Piece &p1 = *iter;

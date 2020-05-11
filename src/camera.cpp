@@ -1,4 +1,5 @@
 #include "camera.hpp"
+#include "shader.hpp"
 #include "glm/gtx/quaternion.hpp"
 
 g::Camera g::camera;
@@ -37,8 +38,8 @@ void g::Camera::flush_projection()
 	if (is_camera3d()) {
 		constexpr float fov = TORAD(45.f);
 		const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
-		glm::mat4 proj = glm::perspective(fov, aspect, 0.1f, 100.f);
-		glUniformMatrix4fv(g::u_projection, 1, false, &proj[0][0]);
+		glm::mat4 proj = glm::perspective(fov, aspect, 0.1f, 200.f);
+		glUniformMatrix4fv(g::shaders.u_projection(), 1, false, &proj[0][0]);
 	} else {
 		const float zoom = g::camera_ortho.zoom();
 		glm::mat4 proj = glm::ortho(-zoom, zoom, -zoom, zoom, -50.f, 50.f);
@@ -49,7 +50,7 @@ void g::Camera::flush_projection()
 			const float aspect = static_cast<float>(g::canvas_height) / g::canvas_width;
 			proj = glm::scale(proj, glm::vec3(aspect, 1.f, 1.f));
 		}
-		glUniformMatrix4fv(g::u_projection, 1, false, &proj[0][0]);
+		glUniformMatrix4fv(g::shaders.u_projection(), 1, false, &proj[0][0]);
 	}
 }
 
@@ -61,10 +62,10 @@ void g::Camera::flush_modelview()
 	if (is_camera3d()) {
 		glm::mat4 mv = glm::mat4_cast(g::camera3d.rotation());
 		mv = glm::translate(mv, g::camera3d.position());
-		glUniformMatrix4fv(g::u_modelview, 1, false, &mv[0][0]);
+		glUniformMatrix4fv(g::shaders.u_modelview(), 1, false, &mv[0][0]);
 	} else {
 		const glm::mat4 &mv = g::camera_ortho.transformation();
-		glUniformMatrix4fv(g::u_modelview, 1, false, &mv[0][0]);
+		glUniformMatrix4fv(g::shaders.u_modelview(), 1, false, &mv[0][0]);
 	}
 }
 
@@ -103,7 +104,7 @@ void g::Camera3d::rotate_z(const float angle)
 
 void g::Camera3d::reset()
 {
-	m_position = { 0.f, 0.f, -30.f };
+	m_position = { 0.f, 0.f, -50.f };
 	m_rotation = { 1.f, 0.f, 0.f, 0.f };
 	g::camera.update_modelview();
 }
@@ -140,7 +141,7 @@ void g::CameraOrtho::side(OrthoSide l_side)
 void g::CameraOrtho::reset()
 {
 	m_side = RIGHT;
-	m_zoom = 20.f;
+	m_zoom = 50.f;
 	m_translation.x = 0.f;
 	m_translation.y = 0.f;
 	g::camera.update_modelview();

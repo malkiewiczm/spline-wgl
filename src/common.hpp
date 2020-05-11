@@ -53,10 +53,7 @@ static inline std::ostream &operator<< (std::ostream &o, const glm::vec3 &v)
 }
 
 namespace g {
-	extern GLuint standard_shader;
 	extern int canvas_width;
 	extern int canvas_height;
-	extern GLuint u_projection;
-	extern GLuint u_modelview;
 	extern bool is_edit_mode;
 }

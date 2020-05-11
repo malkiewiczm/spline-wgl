@@ -1,4 +1,5 @@
 #include "vao.hpp"
+#include "shader.hpp"
 
 static void *attrib_index_float(const int index)
 {
@@ -14,17 +15,19 @@ void VAO::context_switch() const
 	glBindBuffer(GL_ARRAY_BUFFER, m_vertex_buffer);
 	switch (m_kind) {
 	case KIND_PN:
+		g::shaders.kind(g::Shaders::KIND_PN);
 		glVertexAttribPointer(a_position, 3, GL_FLOAT, false, sizeof(Vertex_PN), attrib_index_float(0));
 		glVertexAttribPointer(a_normal, 3, GL_FLOAT, false, sizeof(Vertex_PN), attrib_index_float(3));
 		break;
 	case KIND_PT:
+		g::shaders.kind(g::Shaders::KIND_PT);
 		glVertexAttribPointer(a_position, 3, GL_FLOAT, false, sizeof(Vertex_PT), attrib_index_float(0));
 	glVertexAttribPointer(a_uv, 2, GL_FLOAT, false, sizeof(Vertex_PT), attrib_index_float(3));
 		break;
 	default:
+		g::shaders.kind(g::Shaders::KIND_PC);
 		glVertexAttribPointer(a_position, 3, GL_FLOAT, false, sizeof(Vertex_PC), attrib_index_float(0));
 	glVertexAttribPointer(a_color, 3, GL_FLOAT, false, sizeof(Vertex_PC), attrib_index_float(3));
-		break;
 	}
 }
 

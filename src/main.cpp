@@ -7,6 +7,7 @@
 #include "mouse.hpp"
 #include "key.hpp"
 #include "spline.hpp"
+#include "cart.hpp"
 
 static bool s_show_control_mesh = true;
 static VAO s_control_vao;
@@ -141,6 +142,7 @@ static EM_BOOL on_mouse(int eventType, const EmscriptenMouseEvent *mouseEvent, v
 		if (eventType == EMSCRIPTEN_EVENT_MOUSEDOWN) {
 			g::mouse.down(true);
 			g::spline.edit_click(s_control_vao, s_curve_vao);
+			g::cart.reset();
 		} else if (eventType == EMSCRIPTEN_EVENT_MOUSEUP) {
 			g::mouse.down(false);
 		}
@@ -182,99 +184,6 @@ static void context_setup()
 
 static void setup_shader()
 {
-#ifdef PN_SHADER
-	const GLchar *const vs_src = "\n\
-precision mediump float;\n\
-attribute vec3 inputPosition;\n\
-attribute vec3 inputNormal;\n\
-\n\
-uniform mat4 projection;\n\
-uniform mat4 modelview;\n\
-\n\
-varying vec3 position;\n\
-varying vec3 normal;\n\
-\n\
-void main() {\n\
-	position = (modelview*vec4(inputPosition, 1.0)).xyz;\n\
-	gl_Position = projection*vec4(position, 1.0);\n\
-	normal = normalize((modelview*vec4(inputNormal, 0.0)).xyz);\n\
-}\n\
-";
-	const GLchar *const fs_src = "\n\
-precision mediump float;\n\
-\n\
-varying vec3 position;\n\
-varying vec3 normal;\n\
-\n\
-vec3 do_light(vec3 lightDir, vec3 diffuseColor, vec3 specColor)\n\
-{\n\
-	vec3 reflectDir = reflect(-lightDir, normal);\n\
-	vec3 viewDir = -normalize(position);\n\
-	float lambertian = max(dot(lightDir, normal), 0.0);;\n\
-	float specular = 0.0;\n\
-	if(lambertian > 0.0) {\n\
-		float specAngle = max(dot(reflectDir, viewDir), 0.0);\n\
-		specular = pow(specAngle, 10.0);\n\
-	}\n\
-	return 0.1*diffuseColor + lambertian*diffuseColor + specular*specColor;\n\
-}\n\
-void main() {\n\
-	vec3 lightA = do_light(normalize(vec3(1., 1., 2.)), vec3(0.66, 0.66, 0.), vec3(1.));\n\
-	gl_FragColor = vec4(lightA, 1.);\n\
-}\n\
-";
-#else
-	const GLchar *const vs_src = "\n\
-precision mediump float;\n\
-attribute vec3 inputPosition;\n\
-attribute vec3 inputColor;\n\
-\n\
-uniform mat4 projection;\n\
-uniform mat4 modelview;\n\
-\n\
-varying vec3 position;\n\
-varying vec3 color;\n\
-\n\
-void main()\n\
-{\n\
-	position = (modelview*vec4(inputPosition, 1.0)).xyz;\n\
-	gl_Position = projection*vec4(position, 1.0);\n\
-	color = inputColor;\n\
-}\n\
-";
-	const GLchar *const fs_src = "\n\
-precision mediump float;\n\
-\n\
-varying vec3 position;\n\
-varying vec3 color;\n\
-\n\
-void main()\n\
-{\n\
-	gl_FragColor = vec4(color, 1.);\n\
-}\n\
-";
-#endif
-	const GLuint vs = compile_shader(vs_src, GL_VERTEX_SHADER);
-	const GLuint fs = compile_shader(fs_src, GL_FRAGMENT_SHADER);
-	g::standard_shader = link_shader({ vs, fs });
-	glUseProgram(g::standard_shader);
-#ifdef PN_SHADER
-	constexpr GLuint a_position = 0;
-	constexpr GLuint a_normal = 1;
-	glBindAttribLocation(g::standard_shader, a_position, "inputPosition");
-	glBindAttribLocation(g::standard_shader, a_normal, "inputNormal");
-	glEnableVertexAttribArray(a_position);
-	glEnableVertexAttribArray(a_normal);
-#else
-	constexpr GLuint a_position = 0;
-	constexpr GLuint a_color = 1;
-	glBindAttribLocation(g::standard_shader, a_position, "inputPosition");
-	glBindAttribLocation(g::standard_shader, a_color, "inputColor");
-	glEnableVertexAttribArray(a_position);
-	glEnableVertexAttribArray(a_color);
-#endif
-	g::u_projection = glGetUniformLocation(g::standard_shader, "projection");
-	g::u_modelview = glGetUniformLocation(g::standard_shader, "modelview");
 	emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, on_key);
 	emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, on_key);
 	emscripten_set_resize_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, on_resize);
@@ -286,6 +195,7 @@ void main()\n\
 	g::camera.init();
 	g::camera3d.init();
 	g::camera_ortho.init();
+	g::cart.init();
 	g::is_edit_mode = true;
 	{
 		// calling this event updates the projection
@@ -294,6 +204,7 @@ void main()\n\
 		evt.windowInnerHeight = 920;
 		on_resize(EMSCRIPTEN_EVENT_RESIZE, &evt, nullptr);
 	}
+	g::shaders.init();
 }
 
 static void gl_setup()
@@ -351,6 +262,8 @@ static void draw()
 		s_control_vao.draw();
 	}
 	s_curve_vao.draw();
+	g::cart.step(0.016667f);
+	g::cart.draw();
 }
 
 int main()
