@@ -7,29 +7,24 @@ g::Spline g::spline;
 
 void g::Spline::init()
 {
-	std::vector<Vertex_PC> vertex_data {
-		{ { 0.273279f, 1.050624f, -2.005395f }, { 0.89596240119633f, 0.82284005249184f, 0.7466048158208f } },
-		{ { -0.857576f, -0.598839f, -2.026340f }, { 0.17410809656056f, 0.85894344920194f, 0.71050141911069f } },
-		{ { 1.472728f, 0.180840f, 1.731609f }, { 0.5135349589526f, 0.30399487289041f, 0.014984588152715f } },
-		{ { 0.341872f, -1.468623f, 1.710664f }, { 0.091402935880612f, 0.36445204016236f, 0.14731284524064f } },
-		{ { -0.341872f, 1.468623f, -1.710664f }, { 0.16589861751152f, 0.98852504043703f, 0.44569231238746f } },
-		{ { -1.472728f, -0.180840f, -1.731609f }, { 0.11908322397534f, 0.0046693319498276f, 0.0089114047669912f } },
-		{ { 0.857576f, 0.598839f, 2.026340f }, { 0.3778801843318f, 0.53166295358135f, 0.57118442335276f } },
-		{ { -0.273279f, -1.050624f, 2.005395f }, { 0.60176396984771f, 0.60716574602496f, 0.16623432111576f } }
-	};
-	std::vector<GLuint> index_data {
-		4, 2, 0, 2, 7, 3, 6, 5, 7, 1, 7, 5, 0, 3, 1, 4, 1, 5, 4, 6, 2, 2, 6, 7, 6, 4, 5, 1, 3, 7, 0, 2, 3, 4, 0, 1
-	};
 	m_place_when_click = false;
 	m_show_control_mesh = true;
 	m_control_vao.gen_buffers();
 	m_control_vao.draw_mode(GL_LINE_STRIP);
-	m_control_vao.update_buffers(vertex_data, index_data);
+	m_control_vao.update_buffers<Vertex_PC>({ { glm::vec3(-5.f), glm::vec3(1.f, 0., 0.f) }, { glm::vec3(5.f), glm::vec3(0.f, 0., 1.f) } }, { 0, 1 });
 	m_control_vao.kind(VAO::KIND_PC);
+	std::vector<Vertex_PNC> vertex_data {
+		{ { 0.273279f, 1.050624f, -2.005395f }, { 0.f, 0.f, 1.f }, { 0.89596240119633f, 0.82284005249184f, 0.7466048158208f } },
+		{ { -0.857576f, -0.598839f, -2.026340f }, { 0.f, 0.f, 1.f }, { 0.17410809656056f, 0.85894344920194f, 0.71050141911069f } },
+		{ { 1.472728f, 0.180840f, 1.731609f }, { 0.f, 0.f, 1.f }, { 0.5135349589526f, 0.30399487289041f, 0.014984588152715f } },
+	};
+	std::vector<GLuint> index_data {
+		0, 1, 2
+	};
 	m_curve_vao.gen_buffers();
 	m_curve_vao.draw_mode(GL_TRIANGLES);
 	m_curve_vao.update_buffers(vertex_data, index_data);
-	m_curve_vao.kind(VAO::KIND_PC);
+	m_curve_vao.kind(VAO::KIND_PNC);
 }
 
 void g::Spline::draw()
@@ -143,23 +138,22 @@ void g::Spline::add_pt(const glm::vec3 &p)
 	if (m_control_pts.size() <= 1)
 		return;
 	const glm::vec3 control_color { 0.5f, 0.f, 0.f };
-	const glm::vec3 bottom_color { 0.f, 0.5f, 0.5f };
-	const glm::vec3 top_color { 0.3f, 0.5f, 0.5f };
+	const glm::vec3 curve_color { 0.f, 0.5f, 0.5f };
 	m_curve_pts.clear();
 	calc_spline3(m_control_pts, m_curve_pts);
-	std::vector<Vertex_PC> vertices(m_control_pts.size());
-	std::vector<GLuint> indices(vertices.size());
-	for (unsigned i = 0; i < vertices.size(); ++i) {
-		vertices[i].position = m_control_pts[i];
-		vertices[i].color = control_color;
+	std::vector<Vertex_PC> ctrl_vertices(m_control_pts.size());
+	std::vector<GLuint> indices(ctrl_vertices.size());
+	for (unsigned i = 0; i < ctrl_vertices.size(); ++i) {
+		ctrl_vertices[i].position = m_control_pts[i];
+		ctrl_vertices[i].color = control_color;
 	}
 	for (unsigned i = 0; i < indices.size(); ++i) {
 		indices[i] = i;
 	}
-	m_control_vao.update_buffers(vertices, indices);
+	m_control_vao.update_buffers(ctrl_vertices, indices);
 	if (m_curve_pts.empty())
 		return;
-	vertices.resize(m_curve_pts.size()*4);
+	std::vector<Vertex_PNC> curve_vertices(m_curve_pts.size()*4);
 	//indices.resize(vertices.size());
 	indices.clear();
 	constexpr float R = 0.1f;
@@ -175,14 +169,18 @@ void g::Spline::add_pt(const glm::vec3 &p)
 		}
 		const glm::vec3 normal = glm::normalize(glm::cross(binormal, m_curve_pts[i].tangent));
 		const int k = 4*i;
-		vertices[k].position = m_curve_pts[i].position - binormal*R;
-		vertices[k + 1].position = m_curve_pts[i].position + binormal*R;
-		vertices[k + 2].position = vertices[k].position + normal*R;
-		vertices[k + 3].position = vertices[k + 1].position + normal*R;
-		vertices[k].color = bottom_color;
-		vertices[k + 1].color = bottom_color;
-		vertices[k + 2].color = top_color;
-		vertices[k + 3].color = top_color;
+		curve_vertices[k].position = m_curve_pts[i].position - binormal*R;
+		curve_vertices[k + 1].position = m_curve_pts[i].position + binormal*R;
+		curve_vertices[k + 2].position = curve_vertices[k].position + normal*R;
+		curve_vertices[k + 3].position = curve_vertices[k + 1].position + normal*R;
+		curve_vertices[k].color = curve_color;
+		curve_vertices[k + 1].color = curve_color;
+		curve_vertices[k + 2].color = curve_color;
+		curve_vertices[k + 3].color = curve_color;
+		const glm::vec3 center = m_curve_pts[i].position + normal*R;
+		for (int j = 0; j < 4; ++j) {
+			curve_vertices[k + j].normal = glm::normalize(center - curve_vertices[k + j].position);
+		}
 	}
 	const int pattern[18] = { 0, 4, 1, 1, 4, 5, 1, 5, 3, 3, 5, 7, 0, 4, 2, 2, 4, 6 };
 	for (unsigned i = 1; i < m_curve_pts.size(); ++i) {
@@ -199,7 +197,7 @@ void g::Spline::add_pt(const glm::vec3 &p)
 			m_curve_pts[i].distance = m_curve_pts[i - 1].distance + delta;
 		}
 	}
-	m_curve_vao.update_buffers(vertices, indices);
+	m_curve_vao.update_buffers(curve_vertices, indices);
 }
 
 void g::Spline::edit_click_place()

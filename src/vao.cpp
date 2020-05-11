@@ -8,26 +8,38 @@ static void *attrib_index_float(const int index)
 
 void VAO::context_switch() const
 {
-	constexpr GLuint a_position = 0;
-	constexpr GLuint a_normal = 1;
-	constexpr GLuint a_uv = 1;
-	constexpr GLuint a_color = 1;
 	glBindBuffer(GL_ARRAY_BUFFER, m_vertex_buffer);
+	if (m_kind == KIND_PNC) {
+		glEnableVertexAttribArray(2);
+	} else {
+		glDisableVertexAttribArray(2);
+	}
 	switch (m_kind) {
-	case KIND_PN:
-		g::shaders.kind(g::Shaders::KIND_PN);
-		glVertexAttribPointer(a_position, 3, GL_FLOAT, false, sizeof(Vertex_PN), attrib_index_float(0));
-		glVertexAttribPointer(a_normal, 3, GL_FLOAT, false, sizeof(Vertex_PN), attrib_index_float(3));
+	case KIND_PNC: {
+		constexpr GLuint a_position = 0;
+		constexpr GLuint a_normal = 1;
+		constexpr GLuint a_color = 2;
+		g::shaders.kind(g::Shaders::KIND_PNC);
+		glVertexAttribPointer(a_position, 3, GL_FLOAT, false, sizeof(Vertex_PNC), attrib_index_float(0));
+		glVertexAttribPointer(a_normal, 3, GL_FLOAT, false, sizeof(Vertex_PNC), attrib_index_float(3));
+		glVertexAttribPointer(a_color, 3, GL_FLOAT, false, sizeof(Vertex_PNC), attrib_index_float(6));
 		break;
-	case KIND_PT:
+	}
+	case KIND_PT: {
+		constexpr GLuint a_position = 0;
+		constexpr GLuint a_uv = 1;
 		g::shaders.kind(g::Shaders::KIND_PT);
 		glVertexAttribPointer(a_position, 3, GL_FLOAT, false, sizeof(Vertex_PT), attrib_index_float(0));
 	glVertexAttribPointer(a_uv, 2, GL_FLOAT, false, sizeof(Vertex_PT), attrib_index_float(3));
 		break;
-	default:
+	}
+	default: {
+		constexpr GLuint a_position = 0;
+		constexpr GLuint a_color = 1;
 		g::shaders.kind(g::Shaders::KIND_PC);
 		glVertexAttribPointer(a_position, 3, GL_FLOAT, false, sizeof(Vertex_PC), attrib_index_float(0));
 	glVertexAttribPointer(a_color, 3, GL_FLOAT, false, sizeof(Vertex_PC), attrib_index_float(3));
+	}
 	}
 }
 

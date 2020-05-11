@@ -10,8 +10,9 @@ namespace g {
 		};
 		void init();
 		LAZY_GET(CameraKind, kind)
-		LAZY_ACCESSORR(glm::vec3, looking_at)
 		void kind(CameraKind l_kind);
+		LAZY_GETR(glm::vec3, looking_at)
+		void looking_at(const glm::vec3 &l_looking_at);
 		bool is_camera_3d() const {
 			return m_kind == CAMERA_3D;
 		}

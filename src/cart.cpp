@@ -9,7 +9,7 @@ void g::Cart::init()
 {
 	vao.gen_buffers();
 	vao.draw_mode(GL_TRIANGLES);
-	vao.kind(VAO::KIND_PN);
+	vao.kind(VAO::KIND_PNC);
 	reset();
 	update_buffers();
 }
@@ -27,15 +27,16 @@ void g::Cart::update_buffers()
 	//constexpr float H = 0.6f;
 	constexpr float S = 0.5f;
 	constexpr float R = 0.5773502f;
-	std::vector<Vertex_PN> vertices {
-		{ m_draw_position + glm::vec3(-S, -S, -S), { -R, -R, -R } },
-		{ m_draw_position + glm::vec3(-S, -S, S), { -R, -R, R } },
-		{ m_draw_position + glm::vec3(-S, S, -S), { -R, R, -R } },
-		{ m_draw_position + glm::vec3(-S, S, S), { -R, R, R } },
-		{ m_draw_position + glm::vec3(S, -S, -S), { R, -R, -R } },
-		{ m_draw_position + glm::vec3(S, -S, S), { R, -R, R } },
-		{ m_draw_position + glm::vec3(S, S, -S), { R, R, -R } },
-		{ m_draw_position + glm::vec3(S, S, S), { R, R, R } },
+	const glm::vec3 color { 0.8f, 0.f, 0.f };
+	std::vector<Vertex_PNC> vertices {
+		{ m_draw_position + glm::vec3(-S, -S, -S), { -R, -R, -R }, color },
+		{ m_draw_position + glm::vec3(-S, -S, S), { -R, -R, R }, color },
+		{ m_draw_position + glm::vec3(-S, S, -S), { -R, R, -R }, color },
+		{ m_draw_position + glm::vec3(-S, S, S), { -R, R, R }, color },
+		{ m_draw_position + glm::vec3(S, -S, -S), { R, -R, -R }, color },
+		{ m_draw_position + glm::vec3(S, -S, S), { R, -R, R }, color },
+		{ m_draw_position + glm::vec3(S, S, -S), { R, R, -R }, color },
+		{ m_draw_position + glm::vec3(S, S, S), { R, R, R }, color },
 	};
 	std::vector<GLuint> indices {
 		0, 1, 2, 1, 3, 2,

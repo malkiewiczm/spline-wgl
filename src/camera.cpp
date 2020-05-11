@@ -20,6 +20,12 @@ void g::Camera::kind(CameraKind l_kind)
 	update_projection();
 }
 
+void g::Camera::looking_at(const glm::vec3 &l_looking_at)
+{
+	m_looking_at = l_looking_at;
+	update_modelview();
+}
+
 void g::Camera::update_projection()
 {
 	m_dirty_projection = true;

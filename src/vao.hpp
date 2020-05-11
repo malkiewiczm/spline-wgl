@@ -2,9 +2,10 @@
 
 #include "common.hpp"
 
-struct Vertex_PN {
+struct Vertex_PNC {
 	glm::vec3 position;
 	glm::vec3 normal;
+	glm::vec3 color;
 };
 
 struct Vertex_PT {
@@ -20,7 +21,7 @@ struct Vertex_PC {
 class VAO {
 public:
 	enum VAOKind {
-		KIND_PN, KIND_PT, KIND_PC
+		KIND_PNC, KIND_PT, KIND_PC
 	};
 	template <typename Vertex>
 	void update_buffers(const std::vector<Vertex> &vertices, const std::vector<GLuint> &indices) {
