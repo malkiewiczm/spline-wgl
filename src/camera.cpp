@@ -3,12 +3,12 @@
 #include "glm/gtx/quaternion.hpp"
 
 g::Camera g::camera;
-g::Camera3d g::camera3d;
+g::Camera3d g::camera_3d;
 g::CameraOrtho g::camera_ortho;
 
 void g::Camera::init()
 {
-	m_kind = CAMERA3D;
+	m_kind = CAMERA_3D;
 	m_dirty_projection = true;
 	m_dirty_modelview = true;
 }
@@ -35,12 +35,8 @@ void g::Camera::flush_projection()
 	if (! m_dirty_projection)
 		return;
 	m_dirty_projection = false;
-	if (is_camera3d()) {
-		constexpr float fov = TORAD(45.f);
-		const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
-		glm::mat4 proj = glm::perspective(fov, aspect, 0.1f, 200.f);
-		glUniformMatrix4fv(g::shaders.u_projection(), 1, false, &proj[0][0]);
-	} else {
+	switch (m_kind) {
+	case CAMERA_ORTHO: {
 		const float zoom = g::camera_ortho.zoom();
 		glm::mat4 proj = glm::ortho(-zoom, zoom, -zoom, zoom, -50.f, 50.f);
 		if (g::canvas_width > g::canvas_height) {
@@ -51,6 +47,14 @@ void g::Camera::flush_projection()
 			proj = glm::scale(proj, glm::vec3(aspect, 1.f, 1.f));
 		}
 		glUniformMatrix4fv(g::shaders.u_projection(), 1, false, &proj[0][0]);
+		break;
+	}
+	default: {
+		constexpr float fov = TORAD(45.f);
+		const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
+		glm::mat4 proj = glm::perspective(fov, aspect, 0.1f, 200.f);
+		glUniformMatrix4fv(g::shaders.u_projection(), 1, false, &proj[0][0]);
+	}
 	}
 }
 
@@ -59,13 +63,23 @@ void g::Camera::flush_modelview()
 	if (! m_dirty_modelview)
 		return;
 	m_dirty_modelview = false;
-	if (is_camera3d()) {
-		glm::mat4 mv = glm::mat4_cast(g::camera3d.rotation());
-		mv = glm::translate(mv, g::camera3d.position());
+	switch (m_kind) {
+	case CAMERA_3D: {
+		glm::mat4 mv = glm::mat4_cast(g::camera_3d.rotation());
+		mv = glm::translate(mv, g::camera_3d.position());
 		glUniformMatrix4fv(g::shaders.u_modelview(), 1, false, &mv[0][0]);
-	} else {
+		break;
+	}
+	case CAMERA_ORTHO: {
 		const glm::mat4 &mv = g::camera_ortho.transformation();
 		glUniformMatrix4fv(g::shaders.u_modelview(), 1, false, &mv[0][0]);
+		break;
+	}
+	case CAMERA_LOOKAT: {
+		const glm::mat4 &mv = glm::lookAt(-g::camera_3d.position(), m_looking_at, glm::vec3(0.f, 1.f, 0.f));
+		glUniformMatrix4fv(g::shaders.u_modelview(), 1, false, &mv[0][0]);
+		break;
+	}
 	}
 }
 

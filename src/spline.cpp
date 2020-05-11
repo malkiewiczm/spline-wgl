@@ -20,12 +20,14 @@ void g::Spline::init()
 	std::vector<GLuint> index_data {
 		4, 2, 0, 2, 7, 3, 6, 5, 7, 1, 7, 5, 0, 3, 1, 4, 1, 5, 4, 6, 2, 2, 6, 7, 6, 4, 5, 1, 3, 7, 0, 2, 3, 4, 0, 1
 	};
+	m_place_when_click = false;
+	m_show_control_mesh = true;
 	m_control_vao.gen_buffers();
 	m_control_vao.draw_mode(GL_LINE_STRIP);
 	m_control_vao.update_buffers(vertex_data, index_data);
 	m_control_vao.kind(VAO::KIND_PC);
 	m_curve_vao.gen_buffers();
-	m_curve_vao.draw_mode(GL_LINE_STRIP);
+	m_curve_vao.draw_mode(GL_TRIANGLES);
 	m_curve_vao.update_buffers(vertex_data, index_data);
 	m_curve_vao.kind(VAO::KIND_PC);
 }
@@ -141,7 +143,8 @@ void g::Spline::add_pt(const glm::vec3 &p)
 	if (m_control_pts.size() <= 1)
 		return;
 	const glm::vec3 control_color { 0.5f, 0.f, 0.f };
-	const glm::vec3 curve_color { 0.f, 0.5f, 0.5f };
+	const glm::vec3 bottom_color { 0.f, 0.5f, 0.5f };
+	const glm::vec3 top_color { 0.3f, 0.5f, 0.5f };
 	m_curve_pts.clear();
 	calc_spline3(m_control_pts, m_curve_pts);
 	std::vector<Vertex_PC> vertices(m_control_pts.size());
@@ -156,14 +159,37 @@ void g::Spline::add_pt(const glm::vec3 &p)
 	m_control_vao.update_buffers(vertices, indices);
 	if (m_curve_pts.empty())
 		return;
-	vertices.resize(m_curve_pts.size());
-	indices.resize(vertices.size());
-	for (unsigned i = 0; i < vertices.size(); ++i) {
-		vertices[i].position = m_curve_pts[i].position;
-		vertices[i].color = curve_color;
+	vertices.resize(m_curve_pts.size()*4);
+	//indices.resize(vertices.size());
+	indices.clear();
+	constexpr float R = 0.1f;
+	const glm::vec3 up { 0.f, 1.f, 0.f };
+	glm::vec3 last_binormal { 0.f, 0.f, -1.f };
+	for (unsigned i = 0; i < m_curve_pts.size(); ++i) {
+		glm::vec3 binormal = glm::cross(m_curve_pts[i].tangent, up);
+		if (glm::length(binormal) > 0.01f) {
+			binormal = glm::normalize(binormal);
+			last_binormal = binormal;
+		} else {
+			binormal = last_binormal;
+		}
+		const glm::vec3 normal = glm::normalize(glm::cross(binormal, m_curve_pts[i].tangent));
+		const int k = 4*i;
+		vertices[k].position = m_curve_pts[i].position - binormal*R;
+		vertices[k + 1].position = m_curve_pts[i].position + binormal*R;
+		vertices[k + 2].position = vertices[k].position + normal*R;
+		vertices[k + 3].position = vertices[k + 1].position + normal*R;
+		vertices[k].color = bottom_color;
+		vertices[k + 1].color = bottom_color;
+		vertices[k + 2].color = top_color;
+		vertices[k + 3].color = top_color;
 	}
-	for (unsigned i = 0; i < indices.size(); ++i) {
-		indices[i] = i;
+	const int pattern[18] = { 0, 4, 1, 1, 4, 5, 1, 5, 3, 3, 5, 7, 0, 4, 2, 2, 4, 6 };
+	for (unsigned i = 1; i < m_curve_pts.size(); ++i) {
+		const int k = (i - 1)*4;
+		for (int j = 0; j < 18; ++j) {
+			indices.push_back(k + pattern[j]);
+		}
 	}
 	// calculate path length
 	{

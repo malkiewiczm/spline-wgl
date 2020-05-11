@@ -12,6 +12,7 @@ namespace g {
 		void step(float dt);
 		void draw();
 		void update_buffers();
+		LAZY_GETR(glm::vec3, draw_position)
 	private:
 		float m_position;
 		float m_velocity;

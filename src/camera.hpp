@@ -6,16 +6,20 @@ namespace g {
 	class Camera {
 	public:
 		enum CameraKind {
-			CAMERA3D, CAMERA_ORTHO
+			CAMERA_3D, CAMERA_ORTHO, CAMERA_LOOKAT
 		};
 		void init();
 		LAZY_GET(CameraKind, kind)
+		LAZY_ACCESSORR(glm::vec3, looking_at)
 		void kind(CameraKind l_kind);
-		bool is_camera3d() const {
-			return m_kind == CAMERA3D;
+		bool is_camera_3d() const {
+			return m_kind == CAMERA_3D;
 		}
 		bool is_camera_ortho() const {
 			return m_kind == CAMERA_ORTHO;
+		}
+		bool is_camera_lookat() const {
+			return m_kind == CAMERA_LOOKAT;
 		}
 		void update_projection();
 		void update_modelview();
@@ -25,6 +29,7 @@ namespace g {
 		CameraKind m_kind;
 		bool m_dirty_projection;
 		bool m_dirty_modelview;
+		glm::vec3 m_looking_at;
 	};
 	class Camera3d {
 	public:
@@ -58,6 +63,6 @@ namespace g {
 		OrthoSide m_side;
 	};
 	extern Camera camera;
-	extern Camera3d camera3d;
+	extern Camera3d camera_3d;
 	extern CameraOrtho camera_ortho;
 }

@@ -36,8 +36,8 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 		bool ret = false;
 		switch (keyCode) {
 		case '1':
-			if (g::camera.is_camera3d()) {
-				g::camera3d.reset();
+			if (g::camera.is_camera_3d()) {
+				g::camera_3d.reset();
 			} else if (g::camera.is_camera_ortho()) {
 				g::camera_ortho.reset();
 			}
@@ -82,7 +82,11 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 			ret = true;
 			break;
 		case '3':
-			g::camera.kind(g::Camera::CAMERA3D);
+			g::camera.kind(g::Camera::CAMERA_3D);
+			ret = true;
+			break;
+		case '4':
+			g::camera.kind(g::Camera::CAMERA_LOOKAT);
 			ret = true;
 			break;
 		case 'W':
@@ -103,7 +107,7 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 			break;
 		}
 		if (ret) {
-			if (g::camera.is_camera_ortho() && g::mouse.locked()) {
+			if (! g::camera.is_camera_3d() && g::mouse.locked()) {
 				emscripten_exit_pointerlock();
 			}
 			return true;
@@ -142,7 +146,7 @@ static EM_BOOL on_mouse(int eventType, const EmscriptenMouseEvent *mouseEvent, v
 		} else if (eventType == EMSCRIPTEN_EVENT_MOUSEUP) {
 			g::mouse.down(false);
 		}
-	} else if (mouseEvent->button == 2 && eventType == EMSCRIPTEN_EVENT_MOUSEDOWN && g::camera.is_camera3d()) {
+	} else if (mouseEvent->button == 2 && eventType == EMSCRIPTEN_EVENT_MOUSEDOWN && g::camera.is_camera_3d()) {
 		if (g::mouse.locked()) {
 			emscripten_exit_pointerlock();
 		} else {
@@ -150,11 +154,11 @@ static EM_BOOL on_mouse(int eventType, const EmscriptenMouseEvent *mouseEvent, v
 		}
 		g::key::release_all();
 	}
-	if (eventType == EMSCRIPTEN_EVENT_MOUSEMOVE && g::camera.is_camera3d() && g::mouse.locked()) {
+	if (eventType == EMSCRIPTEN_EVENT_MOUSEMOVE && g::camera.is_camera_3d() && g::mouse.locked()) {
 		glm::vec2 m { mouseEvent->movementX, mouseEvent->movementY };
 		m /= 400.f;
-		g::camera3d.rotate_y(m.x);
-		g::camera3d.rotate_x(m.y);
+		g::camera_3d.rotate_y(m.x);
+		g::camera_3d.rotate_x(m.y);
 	}
 	return true;
 }
@@ -189,7 +193,7 @@ static void setup_shader()
 	emscripten_set_mouseleave_callback("canvas", nullptr, false, on_mouse);
 	emscripten_set_pointerlockchange_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, false, on_pointerlock);
 	g::camera.init();
-	g::camera3d.init();
+	g::camera_3d.init();
 	g::camera_ortho.init();
 	g::cart.init();
 	g::is_edit_mode = true;
@@ -215,18 +219,21 @@ static void update()
 {
 	constexpr float move_speed = 0.2f;
 	if (g::key::down_up) {
-		g::camera3d.move_relative({ 0., 0., move_speed });
+		g::camera_3d.move_relative({ 0., 0., move_speed });
 	}
 	if (g::key::down_down) {
-		g::camera3d.move_relative({ 0., 0., -move_speed });
+		g::camera_3d.move_relative({ 0., 0., -move_speed });
 	}
 	if (g::key::down_left) {
-		g::camera3d.move_relative({ move_speed, 0., 0. });
+		g::camera_3d.move_relative({ move_speed, 0., 0. });
 	}
 	if (g::key::down_right) {
-		g::camera3d.move_relative({ -move_speed, 0., 0. });
+		g::camera_3d.move_relative({ -move_speed, 0., 0. });
 	}
 	g::cart.step(0.016667f);
+	if (g::camera.is_camera_lookat()) {
+		g::camera.looking_at(g::cart.draw_position());
+	}
 	g::camera.flush_modelview();
 	g::camera.flush_projection();
 }
