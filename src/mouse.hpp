@@ -5,10 +5,10 @@
 namespace g {
 	class Mouse {
 	public:
-		LAZY_ACCESSOR(bool, down)
-		LAZY_ACCESSOR(bool, locked)
-		LAZY_ACCESSOR(int, x)
-		LAZY_ACCESSOR(int, y)
+		ACC_V(bool, down)
+		ACC_V(bool, locked)
+		ACC_V(int, x)
+		ACC_V(int, y)
 	private:
 		bool m_down;
 		bool m_locked;

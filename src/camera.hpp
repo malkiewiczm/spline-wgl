@@ -9,9 +9,9 @@ namespace g {
 			CAMERA_3D, CAMERA_ORTHO, CAMERA_LOOKAT
 		};
 		void init();
-		LAZY_GET(CameraKind, kind)
+		GET_V(CameraKind, kind)
 		void kind(CameraKind l_kind);
-		LAZY_GETR(glm::vec3, looking_at)
+		GET_CR(glm::vec3, looking_at)
 		void looking_at(const glm::vec3 &l_looking_at);
 		bool is_camera_3d() const {
 			return m_kind == CAMERA_3D;
@@ -35,8 +35,8 @@ namespace g {
 	class Camera3d {
 	public:
 		void init();
-		LAZY_GETR(glm::vec3, position)
-		LAZY_GETR(glm::quat, rotation)
+		GET_CR(glm::vec3, position)
+		GET_CR(glm::quat, rotation)
 		void move_relative(const glm::vec3 &v);
 		void rotate_x(const float angle);
 		void rotate_y(const float angle);
@@ -53,8 +53,8 @@ namespace g {
 		};
 		void init();
 		const glm::mat4 &transformation() const;
-		LAZY_GET(float, zoom)
-		LAZY_GET(OrthoSide, side)
+		GET_V(float, zoom)
+		GET_V(OrthoSide, side)
 		void side(OrthoSide l_side);
 		void reset();
 	private:

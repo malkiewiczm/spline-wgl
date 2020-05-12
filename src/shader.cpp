@@ -1,62 +1,8 @@
 #include "common.hpp"
 #include "shader.hpp"
-#include "camera.hpp"
 #include <string.h>
 
 g::Shaders g::shaders;
-
-static inline bool compile_successful(GLuint obj)
-{
-	GLint status;
-	glGetShaderiv(obj, GL_COMPILE_STATUS, &status);
-	if (! status) {
-		constexpr int buf_size = 1024;
-		std::vector<GLchar> buf(buf_size);
-		glGetShaderInfoLog(obj, buf_size, nullptr, &buf[0]);
-		puts(&buf[0]);
-	}
-	return status;
-}
-
-static inline bool link_successful(GLuint obj)
-{
-	GLint status;
-	glGetProgramiv(obj, GL_LINK_STATUS, &status);
-	if (! status) {
-		constexpr int buf_size = 1024;
-		std::vector<GLchar> buf(buf_size);
-		glGetProgramInfoLog(obj, buf_size, nullptr, &buf[0]);
-		puts(&buf[0]);
-	}
-	return status;
-}
-
-static GLuint compile_shader(const GLchar *source, GLenum type)
-{
-	GLuint handle = glCreateShader(type);
-	if (handle == 0)
-		die("could not create shader");
-	GLint source_len = strlen(source);
-	glShaderSource(handle, 1, &source, &source_len);
-	glCompileShader(handle);
-	if (! compile_successful(handle))
-		die("shader program did not compile");
-	return handle;
-}
-
-static GLuint link_shader(const std::vector<GLuint> &programs)
-{
-	GLuint handle = glCreateProgram();
-	if (handle == 0)
-		die("could not create shader program");
-	for (auto item : programs) {
-		glAttachShader(handle, item);
-	}
-	glLinkProgram(handle);
-	if (! link_successful(handle))
-		die("shader program did not link");
-	return handle;
-}
 
 void g::Shaders::init()
 {
@@ -134,60 +80,88 @@ void main()\n\
 	gl_FragColor = vec4(color, 1.);\n\
 }\n\
 ";
-	{
-		// PNC
-		const GLuint pnc_vs = compile_shader(pnc_vs_src, GL_VERTEX_SHADER);
-		const GLuint pnc_fs = compile_shader(pnc_fs_src, GL_FRAGMENT_SHADER);
-		m_PNC = link_shader({ pnc_vs, pnc_fs });
-		glUseProgram(m_PNC);
-		constexpr GLuint a_position = 0;
-		constexpr GLuint a_normal = 1;
-		constexpr GLuint a_color = 2;
-		glBindAttribLocation(m_PNC, a_position, "inputPosition");
-		glBindAttribLocation(m_PNC, a_normal, "inputNormal");
-		glBindAttribLocation(m_PNC, a_color, "inputColor");
-		m_PNC_u_projection = glGetUniformLocation(m_PNC, "projection");
-		m_PNC_u_modelview = glGetUniformLocation(m_PNC, "modelview");
-	}
-	{
-		// PC
-		const GLuint pc_vs = compile_shader(pc_vs_src, GL_VERTEX_SHADER);
-		const GLuint pc_fs = compile_shader(pc_fs_src, GL_FRAGMENT_SHADER);
-		m_PC = link_shader({ pc_vs, pc_fs });
-		glUseProgram(m_PC);
-		constexpr GLuint a_position = 0;
-		constexpr GLuint a_color = 1;
-		glBindAttribLocation(m_PC, a_position, "inputPosition");
-		glBindAttribLocation(m_PC, a_color, "inputColor");
-		m_PC_u_projection = glGetUniformLocation(m_PC, "projection");
-		m_PC_u_modelview = glGetUniformLocation(m_PC, "modelview");
-	}
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	kind(KIND_PC);
+	m_PNC.init(pnc_vs_src, pnc_fs_src, { "inputPosition", "inputNormal", "inputColor" });
+	m_PC.init(pc_vs_src, pc_fs_src, { "inputPosition", "inputColor" });
 }
 
-void g::Shaders::kind(ShaderKind l_kind)
+static bool compile_successful(GLuint obj)
 {
-	if (m_kind == l_kind)
-		return;
-	m_kind = l_kind;
-	switch (m_kind) {
-	case KIND_PNC:
-		m_u_projection = m_PNC_u_projection;
-		m_u_modelview = m_PNC_u_modelview;
-		glUseProgram(m_PNC);
-		break;
-	case KIND_PT:
-		die("kind pt shader not made");
-		break;
-	default:
-		m_u_projection = m_PC_u_projection;
-		m_u_modelview = m_PC_u_modelview;
-		glUseProgram(m_PC);
+	GLint status;
+	glGetShaderiv(obj, GL_COMPILE_STATUS, &status);
+	if (! status) {
+		constexpr int buf_size = 1024;
+		std::vector<GLchar> buf(buf_size);
+		glGetShaderInfoLog(obj, buf_size, nullptr, &buf[0]);
+		puts(&buf[0]);
 	}
-	g::camera.update_modelview();
-	g::camera.update_projection();
-	g::camera.flush_modelview();
-	g::camera.flush_projection();
+	return status;
+}
+
+static bool link_successful(GLuint obj)
+{
+	GLint status;
+	glGetProgramiv(obj, GL_LINK_STATUS, &status);
+	if (! status) {
+		constexpr int buf_size = 1024;
+		std::vector<GLchar> buf(buf_size);
+		glGetProgramInfoLog(obj, buf_size, nullptr, &buf[0]);
+		puts(&buf[0]);
+	}
+	return status;
+}
+
+static GLuint compile_shader(const GLchar *source, GLenum type)
+{
+	GLuint handle = glCreateShader(type);
+	if (handle == 0)
+		die("could not create shader");
+	GLint source_len = strlen(source);
+	glShaderSource(handle, 1, &source, &source_len);
+	glCompileShader(handle);
+	if (! compile_successful(handle))
+		die("shader program did not compile");
+	return handle;
+}
+
+static GLuint link_shader(const std::vector<GLuint> &programs)
+{
+	GLuint handle = glCreateProgram();
+	if (handle == 0)
+		die("could not create shader program");
+	for (auto item : programs) {
+		glAttachShader(handle, item);
+	}
+	glLinkProgram(handle);
+	if (! link_successful(handle))
+		die("shader program did not link");
+	return handle;
+}
+
+void g::Shader::init(const char *fs_src, const char *vs_src, const std::vector<std::string> &attrib_names)
+{
+	const GLuint vs = compile_shader(vs_src, GL_VERTEX_SHADER);
+	const GLuint fs = compile_shader(fs_src, GL_FRAGMENT_SHADER);
+	m_handle = link_shader({ vs, fs });
+	for (unsigned i = 0; i < attrib_names.size(); ++i) {
+		const GLuint loc = static_cast<GLuint>(i);
+		glBindAttribLocation(m_handle, loc, attrib_names[i].c_str());
+	}
+	m_u_model = glGetUniformLocation(m_handle, "model");
+	m_u_view = glGetUniformLocation(m_handle, "view");
+	m_u_projection = glGetUniformLocation(m_handle, "projection");
+}
+
+void g::Shader::use() const
+{
+	static int last_number_of_attribs = 0;
+	if (last_number_of_attribs != m_number_of_attribs) {
+		for (int i = last_number_of_attribs; i < m_number_of_attribs; ++i) {
+			glEnableVertexAttribArray(i);
+		}
+		for (int i = last_number_of_attribs - 1; i >= m_number_of_attribs; --i) {
+			glDisableVertexAttribArray(i);
+		}
+		last_number_of_attribs = m_number_of_attribs;
+	}
+	glUseProgram(m_handle);
 }
