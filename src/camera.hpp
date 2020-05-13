@@ -22,6 +22,7 @@ namespace g {
 		}
 		glm::mat4 calc_view();
 		glm::mat4 calc_projection();
+		glm::mat4 calc_ui_projection();
 	private:
 		CameraKind m_kind;
 		glm::vec3 m_looking_at;

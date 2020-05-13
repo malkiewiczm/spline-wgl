@@ -25,9 +25,9 @@ void _die(const char *msg, const char *file, int line);
 #define SET_R(type, name) void name(const type &l_ ## name) { m_ ## name = l_ ## name; }
 #define GET_V(type, name) type name() const { return m_ ## name; }
 #define GET_CR(type, name) const type &name() const { return m_ ## name; }
-#define GET_R(type, name) GET_CR(type, name) type &name() { return m_ ## name; }
+#define INTERNAL_GET_R(type, name)  type &name() { return m_ ## name; }
 #define ACC_V(type, name) GET_V(type, name) SET_V(type, name)
-#define ACC_R(type, name) GET_R(type, name) SET_R(type, name)
+#define ACC_R(type, name) GET_CR(type, name) INTERNAL_GET_R(type, name) SET_R(type, name)
 
 template <typename T>
 static inline std::ostream &operator<< (std::ostream &o, const std::vector<T> &v)

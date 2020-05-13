@@ -21,6 +21,8 @@ void g::Spline::init()
 	};
 	m_curve_vao.init(GL_TRIANGLES);
 	m_curve_vao.update_buffers(vertex_data, index_data);
+	m_ui_vao.init(GL_LINES);
+	m_ui_vao.update_buffers({ { glm::vec3(-0.5f), glm::vec3(1.f) }, { glm::vec3(0.5f), glm::vec3(0.f) } }, { 0, 1 });
 }
 
 template<int deg>
@@ -121,30 +123,31 @@ g::Spline::Piece g::Spline::get_piece(const float distance)
 	return ret;
 }
 
-void g::Spline::add_pt(const glm::vec3 &p)
+void g::Spline::update_control_vao()
 {
-	m_control_pts.push_back(p);
-	if (m_control_pts.size() <= 1)
-		return;
-	const glm::vec3 control_color { 0.5f, 0.f, 0.f };
-	const glm::vec3 curve_color { 0.f, 0.5f, 0.5f };
-	m_curve_pts.clear();
-	calc_spline3(m_control_pts, m_curve_pts);
-	std::vector<Vertex_PC> ctrl_vertices(m_control_pts.size());
-	std::vector<GLuint> indices(ctrl_vertices.size());
-	for (unsigned i = 0; i < ctrl_vertices.size(); ++i) {
-		ctrl_vertices[i].position = m_control_pts[i];
-		ctrl_vertices[i].color = control_color;
+	const glm::vec3 color { 0.5f, 0.f, 0.f };
+	std::vector<Vertex_PC> vertices(m_control_pts.size());
+	std::vector<GLuint> indices(vertices.size());
+	for (unsigned i = 0; i < vertices.size(); ++i) {
+		vertices[i].position = m_control_pts[i];
+		vertices[i].color = color;
 	}
 	for (unsigned i = 0; i < indices.size(); ++i) {
 		indices[i] = i;
 	}
-	m_control_vao.update_buffers(ctrl_vertices, indices);
-	if (m_curve_pts.empty())
-		return;
-	std::vector<Vertex_PNC> curve_vertices(m_curve_pts.size()*4);
-	//indices.resize(vertices.size());
-	indices.clear();
+	m_control_vao.update_buffers(vertices, indices);
+}
+
+void g::Spline::update_ui_vao()
+{
+	
+}
+
+void g::Spline::update_curve_vao()
+{
+	const glm::vec3 color { 0.f, 0.5f, 0.5f };
+	std::vector<Vertex_PNC> vertices(m_curve_pts.size()*4);
+	std::vector<GLuint> indices;
 	constexpr float R = 0.1f;
 	const glm::vec3 up { 0.f, 1.f, 0.f };
 	glm::vec3 last_binormal { 0.f, 0.f, -1.f };
@@ -158,17 +161,17 @@ void g::Spline::add_pt(const glm::vec3 &p)
 		}
 		const glm::vec3 normal = glm::normalize(glm::cross(binormal, m_curve_pts[i].tangent));
 		const int k = 4*i;
-		curve_vertices[k].position = m_curve_pts[i].position - binormal*R;
-		curve_vertices[k + 1].position = m_curve_pts[i].position + binormal*R;
-		curve_vertices[k + 2].position = curve_vertices[k].position + normal*R;
-		curve_vertices[k + 3].position = curve_vertices[k + 1].position + normal*R;
-		curve_vertices[k].color = curve_color;
-		curve_vertices[k + 1].color = curve_color;
-		curve_vertices[k + 2].color = curve_color;
-		curve_vertices[k + 3].color = curve_color;
+		vertices[k].position = m_curve_pts[i].position - binormal*R;
+		vertices[k + 1].position = m_curve_pts[i].position + binormal*R;
+		vertices[k + 2].position = vertices[k].position + normal*R;
+		vertices[k + 3].position = vertices[k + 1].position + normal*R;
+		vertices[k].color = color;
+		vertices[k + 1].color = color;
+		vertices[k + 2].color = color;
+		vertices[k + 3].color = color;
 		const glm::vec3 center = m_curve_pts[i].position + normal*R;
 		for (int j = 0; j < 4; ++j) {
-			curve_vertices[k + j].normal = glm::normalize(center - curve_vertices[k + j].position);
+			vertices[k + j].normal = glm::normalize(center - vertices[k + j].position);
 		}
 	}
 	const int pattern[18] = { 0, 4, 1, 1, 4, 5, 1, 5, 3, 3, 5, 7, 0, 4, 2, 2, 4, 6 };
@@ -178,6 +181,21 @@ void g::Spline::add_pt(const glm::vec3 &p)
 			indices.push_back(k + pattern[j]);
 		}
 	}
+	m_curve_vao.update_buffers(vertices, indices);
+}
+
+void g::Spline::add_pt(const glm::vec3 &p)
+{
+	m_control_pts.push_back(p);
+	if (m_control_pts.size() <= 1)
+		return;
+	m_curve_pts.clear();
+	calc_spline3(m_control_pts, m_curve_pts);
+	update_control_vao();
+	update_ui_vao();
+	if (m_curve_pts.empty())
+		return;
+	update_curve_vao();
 	// calculate path length
 	{
 		m_curve_pts[0].distance = 0.f;
@@ -186,7 +204,6 @@ void g::Spline::add_pt(const glm::vec3 &p)
 			m_curve_pts[i].distance = m_curve_pts[i - 1].distance + delta;
 		}
 	}
-	m_curve_vao.update_buffers(curve_vertices, indices);
 }
 
 void g::Spline::edit_click_place()

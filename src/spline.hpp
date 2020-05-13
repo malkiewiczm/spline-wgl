@@ -19,13 +19,18 @@ namespace g {
 		ACC_V(bool, show_control_mesh)
 		GET_CR(VAO<Vertex_PC>, control_vao)
 		GET_CR(VAO<Vertex_PNC>, curve_vao)
+		GET_CR(VAO<Vertex_PC>, ui_vao)
 	private:
 		bool m_place_when_click;
 		bool m_show_control_mesh;
 		VAO<Vertex_PC> m_control_vao;
 		VAO<Vertex_PNC> m_curve_vao;
+		VAO<Vertex_PC> m_ui_vao;
 		std::vector<Piece> m_curve_pts;
 		std::vector<glm::vec3> m_control_pts;
+		void update_control_vao();
+		void update_curve_vao();
+		void update_ui_vao();
 		void edit_click_place();
 	};
 	extern Spline spline;

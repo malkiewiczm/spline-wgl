@@ -241,17 +241,23 @@ static void draw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	const glm::mat4 view = g::camera.calc_view();
 	const glm::mat4 projection = g::camera.calc_projection();
-	g::shaders.PC_mvp().use();
-	g::shaders.PC_mvp().view(view);
-	g::shaders.PC_mvp().projection(projection);
+	// draw PNC VAOs
+	g::shaders.PNC().use();
+	g::shaders.PNC().view(view);
+	g::shaders.PNC().projection(projection);
+	g::spline.curve_vao().draw();
+	g::cart.vao().draw();
+	// draw PC vaos
+	g::shaders.PC().use();
+	g::shaders.PC().view(view);
+	g::shaders.PC().projection(projection);
 	if (g::spline.show_control_mesh()) {
 		g::spline.control_vao().draw();
 	}
-	g::shaders.PNC_mvp().use();
-	g::shaders.PNC_mvp().view(view);
-	g::shaders.PNC_mvp().projection(projection);
-	g::spline.curve_vao().draw();
-	g::cart.vao().draw();
+	// draw UI
+	g::shaders.PC().view(glm::mat4(1.f));
+	g::shaders.PC().projection(g::camera.calc_ui_projection());
+	g::spline.ui_vao().draw();
 }
 
 int main()

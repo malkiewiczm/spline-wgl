@@ -167,7 +167,7 @@ build/camera.o: src/camera.cpp src/camera.hpp src/common.hpp \
  src/glm/gtc/../ext/quaternion_transform.hpp \
  src/glm/gtc/../ext/quaternion_transform.inl src/glm/gtc/quaternion.inl \
  src/glm/gtc/epsilon.hpp src/glm/gtc/../detail/setup.hpp \
- src/glm/gtc/epsilon.inl src/shader.hpp src/glm/gtx/quaternion.hpp \
+ src/glm/gtc/epsilon.inl src/glm/gtx/quaternion.hpp \
  src/glm/gtx/../ext/quaternion_exponential.hpp \
  src/glm/gtx/../ext/quaternion_exponential.inl \
  src/glm/gtx/../gtx/norm.hpp src/glm/gtx/../gtx/../gtx/component_wise.hpp \
