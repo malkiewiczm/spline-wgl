@@ -6,6 +6,16 @@ namespace g {
 	class Shader {
 	public:
 		void init(const char *vs_src, const char *fs_src, const std::vector<std::string> &attrib_names);
+		GET_V(GLuint, handle)
+		GET_V(int, number_of_attribs)
+		void use() const;
+	private:
+		GLuint m_handle;
+		int m_number_of_attribs;
+	};
+	class ShaderMVP {
+	public:
+		void init(const char *vs_src, const char *fs_src, const std::vector<std::string> &attrib_names);
 		void model(const glm::mat4 &model) {
 			glUniformMatrix4fv(m_u_model, 1, false, &model[0][0]);
 		}
@@ -15,22 +25,23 @@ namespace g {
 		void projection(const glm::mat4 &projection) {
 			glUniformMatrix4fv(m_u_projection, 1, false, &projection[0][0]);
 		}
-		void use() const;
+		void use() const {
+			m_shader_base.use();
+		}
 	private:
-		GLuint m_handle;
+		Shader m_shader_base;
 		GLuint m_u_model;
 		GLuint m_u_view;
 		GLuint m_u_projection;
-		int m_number_of_attribs;
 	};
 	class Shaders {
 	public:
 		void init();
-		GET_R(Shader, PC)
-		GET_R(Shader, PNC)
+		GET_R(ShaderMVP, PC_mvp)
+		GET_R(ShaderMVP, PNC_mvp)
 	private:
-		Shader m_PC;
-		Shader m_PNC;
+		ShaderMVP m_PC_mvp;
+		ShaderMVP m_PNC_mvp;
 	};
 	extern Shaders shaders;
 }

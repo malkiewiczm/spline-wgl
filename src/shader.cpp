@@ -82,8 +82,21 @@ void main()\n\
 	gl_FragColor = vec4(color, 1.);\n\
 }\n\
 ";
-	m_PNC.init(pnc_vs_src, pnc_fs_src, { "inputPosition", "inputNormal", "inputColor" });
-	m_PC.init(pc_vs_src, pc_fs_src, { "inputPosition", "inputColor" });
+	m_PNC_mvp.init(pnc_vs_src, pnc_fs_src, { "inputPosition", "inputNormal", "inputColor" });
+	m_PC_mvp.init(pc_vs_src, pc_fs_src, { "inputPosition", "inputColor" });
+}
+
+void g::ShaderMVP::init(const char *vs_src, const char *fs_src, const std::vector<std::string> &attrib_names)
+{
+	m_shader_base.init(vs_src, fs_src, attrib_names);
+	const GLuint handle = m_shader_base.handle();
+	m_u_model = glGetUniformLocation(handle, "model");
+	m_u_view = glGetUniformLocation(handle, "view");
+	m_u_projection = glGetUniformLocation(handle, "projection");
+	glUseProgram(handle);
+	model(glm::mat4(1.f));
+	view(glm::mat4(1.f));
+	projection(glm::mat4(1.f));
 }
 
 static bool compile_successful(GLuint obj)
@@ -149,13 +162,6 @@ void g::Shader::init(const char *vs_src, const char *fs_src, const std::vector<s
 		glBindAttribLocation(m_handle, loc, attrib_names[i].c_str());
 	}
 	m_number_of_attribs = attrib_names.size();
-	m_u_model = glGetUniformLocation(m_handle, "model");
-	m_u_view = glGetUniformLocation(m_handle, "view");
-	m_u_projection = glGetUniformLocation(m_handle, "projection");
-	glUseProgram(m_handle);
-	model(glm::mat4(1.f));
-	view(glm::mat4(1.f));
-	projection(glm::mat4(1.f));
 }
 
 void g::Shader::use() const

@@ -38,13 +38,13 @@ glm::mat4 g::Camera::calc_view()
 	switch (m_kind) {
 	case CAMERA_3D: {
 		glm::mat4 m = glm::mat4_cast(g::camera_3d.rotation());
-		return glm::translate(m, g::camera_3d.position());
+		return glm::translate(m, -g::camera_3d.position());
 	}
 	case CAMERA_ORTHO: {
 		return g::camera_ortho.transformation();
 	}
 	case CAMERA_LOOKAT: {
-		return glm::lookAt(-g::camera_3d.position(), m_looking_at, glm::vec3(0.f, 1.f, 0.f));
+		return glm::lookAt(g::camera_3d.position(), m_looking_at, glm::vec3(0.f, 1.f, 0.f));
 	}
 	}
 }
@@ -80,7 +80,7 @@ void g::Camera3d::rotate_z(const float angle)
 
 void g::Camera3d::reset()
 {
-	m_position = { 0.f, 0.f, -50.f };
+	m_position = { 0.f, 0.f, 50.f };
 	m_rotation = { 1.f, 0.f, 0.f, 0.f };
 }
 

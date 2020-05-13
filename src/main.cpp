@@ -218,16 +218,16 @@ static void update()
 {
 	constexpr float move_speed = 0.2f;
 	if (g::key::down_up) {
-		g::camera_3d.move_relative({ 0., 0., move_speed });
-	}
-	if (g::key::down_down) {
 		g::camera_3d.move_relative({ 0., 0., -move_speed });
 	}
+	if (g::key::down_down) {
+		g::camera_3d.move_relative({ 0., 0., move_speed });
+	}
 	if (g::key::down_left) {
-		g::camera_3d.move_relative({ move_speed, 0., 0. });
+		g::camera_3d.move_relative({ -move_speed, 0., 0. });
 	}
 	if (g::key::down_right) {
-		g::camera_3d.move_relative({ -move_speed, 0., 0. });
+		g::camera_3d.move_relative({ move_speed, 0., 0. });
 	}
 	g::cart.step(0.016667f);
 	if (g::camera.is_camera_lookat()) {
@@ -241,15 +241,15 @@ static void draw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	const glm::mat4 view = g::camera.calc_view();
 	const glm::mat4 projection = g::camera.calc_projection();
-	g::shaders.PC().use();
-	g::shaders.PC().view(view);
-	g::shaders.PC().projection(projection);
+	g::shaders.PC_mvp().use();
+	g::shaders.PC_mvp().view(view);
+	g::shaders.PC_mvp().projection(projection);
 	if (g::spline.show_control_mesh()) {
 		g::spline.control_vao().draw();
 	}
-	g::shaders.PNC().use();
-	g::shaders.PNC().view(view);
-	g::shaders.PNC().projection(projection);
+	g::shaders.PNC_mvp().use();
+	g::shaders.PNC_mvp().view(view);
+	g::shaders.PNC_mvp().projection(projection);
 	g::spline.curve_vao().draw();
 	g::cart.vao().draw();
 }
