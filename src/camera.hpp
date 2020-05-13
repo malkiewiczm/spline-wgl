@@ -9,10 +9,8 @@ namespace g {
 			CAMERA_3D, CAMERA_ORTHO, CAMERA_LOOKAT
 		};
 		void init();
-		GET_V(CameraKind, kind)
-		void kind(CameraKind l_kind);
-		GET_CR(glm::vec3, looking_at)
-		void looking_at(const glm::vec3 &l_looking_at);
+		ACC_V(CameraKind, kind)
+		ACC_R(glm::vec3, looking_at)
 		bool is_camera_3d() const {
 			return m_kind == CAMERA_3D;
 		}
@@ -22,14 +20,10 @@ namespace g {
 		bool is_camera_lookat() const {
 			return m_kind == CAMERA_LOOKAT;
 		}
-		void update_projection();
-		void update_modelview();
-		void flush_projection();
-		void flush_modelview();
+		glm::mat4 calc_view();
+		glm::mat4 calc_projection();
 	private:
 		CameraKind m_kind;
-		bool m_dirty_projection;
-		bool m_dirty_modelview;
 		glm::vec3 m_looking_at;
 	};
 	class Camera3d {
@@ -53,9 +47,8 @@ namespace g {
 		};
 		void init();
 		const glm::mat4 &transformation() const;
-		GET_V(float, zoom)
-		GET_V(OrthoSide, side)
-		void side(OrthoSide l_side);
+		ACC_V(float, zoom)
+		ACC_V(OrthoSide, side)
 		void reset();
 	private:
 		glm::mat4 m_ortho_rotations[6];

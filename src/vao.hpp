@@ -39,9 +39,9 @@ public:
 		m_element_count = indices.size();
 	}
 	void draw() const {
-		Vertex::set_attrib_pointers();
 		glBindBuffer(GL_ARRAY_BUFFER, m_vertex_buffer);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_index_buffer);
+		Vertex::set_attrib_pointers();
 		glDrawElements(m_draw_mode, m_element_count, GL_UNSIGNED_INT, (void*)0);
 	}
 private:

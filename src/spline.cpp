@@ -9,10 +9,8 @@ void g::Spline::init()
 {
 	m_place_when_click = false;
 	m_show_control_mesh = true;
-	m_control_vao.gen_buffers();
-	m_control_vao.draw_mode(GL_LINE_STRIP);
-	m_control_vao.update_buffers<Vertex_PC>({ { glm::vec3(-5.f), glm::vec3(1.f, 0., 0.f) }, { glm::vec3(5.f), glm::vec3(0.f, 0., 1.f) } }, { 0, 1 });
-	m_control_vao.kind(VAO::KIND_PC);
+	m_control_vao.init(GL_LINE_STRIP);
+	m_control_vao.update_buffers({ { glm::vec3(-5.f), glm::vec3(1.f, 0., 0.f) }, { glm::vec3(5.f), glm::vec3(0.f, 0., 1.f) } }, { 0, 1 });
 	std::vector<Vertex_PNC> vertex_data {
 		{ { 0.273279f, 1.050624f, -2.005395f }, { 0.f, 0.f, 1.f }, { 0.89596240119633f, 0.82284005249184f, 0.7466048158208f } },
 		{ { -0.857576f, -0.598839f, -2.026340f }, { 0.f, 0.f, 1.f }, { 0.17410809656056f, 0.85894344920194f, 0.71050141911069f } },
@@ -21,17 +19,8 @@ void g::Spline::init()
 	std::vector<GLuint> index_data {
 		0, 1, 2
 	};
-	m_curve_vao.gen_buffers();
-	m_curve_vao.draw_mode(GL_TRIANGLES);
+	m_curve_vao.init(GL_TRIANGLES);
 	m_curve_vao.update_buffers(vertex_data, index_data);
-	m_curve_vao.kind(VAO::KIND_PNC);
-}
-
-void g::Spline::draw()
-{
-	if (m_show_control_mesh)
-		m_control_vao.draw();
-	m_curve_vao.draw();
 }
 
 template<int deg>

@@ -12,17 +12,18 @@ namespace g {
 			float distance;
 		};
 		void init();
-		void draw();
 		void edit_click();
 		void add_pt(const glm::vec3 &p);
 		Piece get_piece(const float distance);
 		ACC_V(bool, place_when_click)
 		ACC_V(bool, show_control_mesh)
+		GET_CR(VAO<Vertex_PC>, control_vao)
+		GET_CR(VAO<Vertex_PNC>, curve_vao)
 	private:
 		bool m_place_when_click;
 		bool m_show_control_mesh;
-		VAO m_control_vao;
-		VAO m_curve_vao;
+		VAO<Vertex_PC> m_control_vao;
+		VAO<Vertex_PNC> m_curve_vao;
 		std::vector<Piece> m_curve_pts;
 		std::vector<glm::vec3> m_control_pts;
 		void edit_click_place();

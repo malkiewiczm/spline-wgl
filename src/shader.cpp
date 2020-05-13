@@ -13,16 +13,17 @@ attribute vec3 inputNormal;\n\
 attribute vec3 inputColor;\n\
 \n\
 uniform mat4 projection;\n\
-uniform mat4 modelview;\n\
+uniform mat4 model;\n\
+uniform mat4 view;\n\
 \n\
 varying vec3 position;\n\
 varying vec3 normal;\n\
 varying vec3 color;\n\
 \n\
 void main() {\n\
-	position = (modelview*vec4(inputPosition, 1.0)).xyz;\n\
+	position = (view*model*vec4(inputPosition, 1.0)).xyz;\n\
 	gl_Position = projection*vec4(position, 1.0);\n\
-	normal = normalize((modelview*vec4(inputNormal, 0.0)).xyz);\n\
+	normal = normalize((view*model*vec4(inputNormal, 0.0)).xyz);\n\
 	color = inputColor;\n\
 }\n\
 ";
@@ -57,14 +58,15 @@ attribute vec3 inputPosition;\n\
 attribute vec3 inputColor;\n\
 \n\
 uniform mat4 projection;\n\
-uniform mat4 modelview;\n\
+uniform mat4 model;\n\
+uniform mat4 view;\n\
 \n\
 varying vec3 position;\n\
 varying vec3 color;\n\
 \n\
 void main()\n\
 {\n\
-	position = (modelview*vec4(inputPosition, 1.0)).xyz;\n\
+	position = (view*model*vec4(inputPosition, 1.0)).xyz;\n\
 	gl_Position = projection*vec4(position, 1.0);\n\
 	color = inputColor;\n\
 }\n\
@@ -137,7 +139,7 @@ static GLuint link_shader(const std::vector<GLuint> &programs)
 	return handle;
 }
 
-void g::Shader::init(const char *fs_src, const char *vs_src, const std::vector<std::string> &attrib_names)
+void g::Shader::init(const char *vs_src, const char *fs_src, const std::vector<std::string> &attrib_names)
 {
 	const GLuint vs = compile_shader(vs_src, GL_VERTEX_SHADER);
 	const GLuint fs = compile_shader(fs_src, GL_FRAGMENT_SHADER);
@@ -146,9 +148,14 @@ void g::Shader::init(const char *fs_src, const char *vs_src, const std::vector<s
 		const GLuint loc = static_cast<GLuint>(i);
 		glBindAttribLocation(m_handle, loc, attrib_names[i].c_str());
 	}
+	m_number_of_attribs = attrib_names.size();
 	m_u_model = glGetUniformLocation(m_handle, "model");
 	m_u_view = glGetUniformLocation(m_handle, "view");
 	m_u_projection = glGetUniformLocation(m_handle, "projection");
+	glUseProgram(m_handle);
+	model(glm::mat4(1.f));
+	view(glm::mat4(1.f));
+	projection(glm::mat4(1.f));
 }
 
 void g::Shader::use() const

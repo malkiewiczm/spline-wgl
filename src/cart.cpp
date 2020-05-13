@@ -7,9 +7,7 @@ static const glm::vec3 GRAVITY { 0.f, -9.8f, 0.f };
 
 void g::Cart::init()
 {
-	vao.gen_buffers();
-	vao.draw_mode(GL_TRIANGLES);
-	vao.kind(VAO::KIND_PNC);
+	m_vao.init(GL_TRIANGLES);
 	reset();
 	update_buffers();
 }
@@ -46,7 +44,7 @@ void g::Cart::update_buffers()
 		1, 5, 4, 1, 4, 0,
 		3, 7, 6, 3, 6, 2
 	};
-	vao.update_buffers(vertices, indices);
+	m_vao.update_buffers(vertices, indices);
 }
 
 void g::Cart::step(float dt)
@@ -55,10 +53,5 @@ void g::Cart::step(float dt)
 	g::Spline::Piece piece = g::spline.get_piece(m_position);
 	m_velocity += glm::dot(piece.tangent, GRAVITY)*dt;
 	m_draw_position = piece.position;
-}
-
-void g::Cart::draw()
-{
 	update_buffers();
-	vao.draw();
 }

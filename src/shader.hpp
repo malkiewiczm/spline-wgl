@@ -5,7 +5,7 @@
 namespace g {
 	class Shader {
 	public:
-		void init(const char *fs_src, const char *vs_src, const std::vector<std::string> &attrib_names);
+		void init(const char *vs_src, const char *fs_src, const std::vector<std::string> &attrib_names);
 		void model(const glm::mat4 &model) {
 			glUniformMatrix4fv(m_u_model, 1, false, &model[0][0]);
 		}

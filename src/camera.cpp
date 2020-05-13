@@ -9,82 +9,42 @@ g::CameraOrtho g::camera_ortho;
 void g::Camera::init()
 {
 	m_kind = CAMERA_3D;
-	m_dirty_projection = true;
-	m_dirty_modelview = true;
 }
 
-void g::Camera::kind(CameraKind l_kind)
+glm::mat4 g::Camera::calc_projection()
 {
-	m_kind = l_kind;
-	update_modelview();
-	update_projection();
-}
-
-void g::Camera::looking_at(const glm::vec3 &l_looking_at)
-{
-	m_looking_at = l_looking_at;
-	update_modelview();
-}
-
-void g::Camera::update_projection()
-{
-	m_dirty_projection = true;
-}
-
-void g::Camera::update_modelview()
-{
-	m_dirty_modelview = true;
-}
-
-void g::Camera::flush_projection()
-{
-	if (! m_dirty_projection)
-		return;
-	m_dirty_projection = false;
 	switch (m_kind) {
 	case CAMERA_ORTHO: {
 		const float zoom = g::camera_ortho.zoom();
 		glm::mat4 proj = glm::ortho(-zoom, zoom, -zoom, zoom, -50.f, 50.f);
 		if (g::canvas_width > g::canvas_height) {
 			const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
-			proj = glm::scale(proj, glm::vec3(1.f, aspect, 1.f));
+			return glm::scale(proj, glm::vec3(1.f, aspect, 1.f));
 		} else {
 			const float aspect = static_cast<float>(g::canvas_height) / g::canvas_width;
-			proj = glm::scale(proj, glm::vec3(aspect, 1.f, 1.f));
+			return glm::scale(proj, glm::vec3(aspect, 1.f, 1.f));
 		}
-		glUniformMatrix4fv(g::shaders.u_projection(), 1, false, &proj[0][0]);
-		break;
 	}
 	default: {
 		constexpr float fov = TORAD(45.f);
 		const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
-		glm::mat4 proj = glm::perspective(fov, aspect, 0.1f, 200.f);
-		glUniformMatrix4fv(g::shaders.u_projection(), 1, false, &proj[0][0]);
+		return glm::perspective(fov, aspect, 0.1f, 200.f);
 	}
 	}
 }
 
-void g::Camera::flush_modelview()
+glm::mat4 g::Camera::calc_view()
 {
-	if (! m_dirty_modelview)
-		return;
-	m_dirty_modelview = false;
 	switch (m_kind) {
 	case CAMERA_3D: {
-		glm::mat4 mv = glm::mat4_cast(g::camera_3d.rotation());
-		mv = glm::translate(mv, g::camera_3d.position());
-		glUniformMatrix4fv(g::shaders.u_modelview(), 1, false, &mv[0][0]);
-		break;
+		glm::mat4 m = glm::mat4_cast(g::camera_3d.rotation());
+		return glm::translate(m, g::camera_3d.position());
 	}
 	case CAMERA_ORTHO: {
-		const glm::mat4 &mv = g::camera_ortho.transformation();
-		glUniformMatrix4fv(g::shaders.u_modelview(), 1, false, &mv[0][0]);
-		break;
+		return g::camera_ortho.transformation();
 	}
 	case CAMERA_LOOKAT: {
-		const glm::mat4 &mv = glm::lookAt(-g::camera_3d.position(), m_looking_at, glm::vec3(0.f, 1.f, 0.f));
-		glUniformMatrix4fv(g::shaders.u_modelview(), 1, false, &mv[0][0]);
-		break;
+		return glm::lookAt(-g::camera_3d.position(), m_looking_at, glm::vec3(0.f, 1.f, 0.f));
 	}
 	}
 }
@@ -98,35 +58,30 @@ void g::Camera3d::move_relative(const glm::vec3 &v)
 {
 	const glm::vec3 rv = glm::rotate(glm::conjugate(m_rotation), v);
 	m_position += rv;
-	g::camera.update_modelview();
 }
 
 void g::Camera3d::rotate_x(const float angle)
 {
 	glm::quat q = glm::angleAxis(angle, glm::vec3(1.f, 0.f, 0.f));
 	m_rotation = q*m_rotation;
-	g::camera.update_modelview();
 }
 
 void g::Camera3d::rotate_y(const float angle)
 {
 	glm::quat q = glm::angleAxis(angle, glm::vec3(0.f, 1.f, 0.f));
 	m_rotation *= q;
-	g::camera.update_modelview();
 }
 
 void g::Camera3d::rotate_z(const float angle)
 {
 	glm::quat q = glm::angleAxis(angle, glm::vec3(0.f, 0.f, 1.f));
 	m_rotation = q*m_rotation;
-	g::camera.update_modelview();
 }
 
 void g::Camera3d::reset()
 {
 	m_position = { 0.f, 0.f, -50.f };
 	m_rotation = { 1.f, 0.f, 0.f, 0.f };
-	g::camera.update_modelview();
 }
 
 void g::CameraOrtho::init()
@@ -150,19 +105,10 @@ const glm::mat4 &g::CameraOrtho::transformation() const
 	return m_ortho_rotations[m_side];
 }
 
-void g::CameraOrtho::side(OrthoSide l_side)
-{
-	if (l_side == m_side)
-		return;
-	m_side = l_side;
-	g::camera.update_modelview();
-}
-
 void g::CameraOrtho::reset()
 {
 	m_side = RIGHT;
 	m_zoom = 50.f;
 	m_translation.x = 0.f;
 	m_translation.y = 0.f;
-	g::camera.update_modelview();
 }

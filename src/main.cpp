@@ -17,7 +17,6 @@ static EM_BOOL on_resize(int eventType, const EmscriptenUiEvent *uiEvent, void *
 	g::canvas_height = uiEvent->windowInnerHeight;
 	emscripten_set_canvas_element_size("#canvas", g::canvas_width, g::canvas_height);
 	glViewport(0, 0, g::canvas_width, g::canvas_height);
-	g::camera.update_projection();
 	return true;
 }
 
@@ -234,16 +233,25 @@ static void update()
 	if (g::camera.is_camera_lookat()) {
 		g::camera.looking_at(g::cart.draw_position());
 	}
-	g::camera.flush_modelview();
-	g::camera.flush_projection();
 }
 
 static void draw()
 {
 	update();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	g::spline.draw();
-	g::cart.draw();
+	const glm::mat4 view = g::camera.calc_view();
+	const glm::mat4 projection = g::camera.calc_projection();
+	g::shaders.PC().use();
+	g::shaders.PC().view(view);
+	g::shaders.PC().projection(projection);
+	if (g::spline.show_control_mesh()) {
+		g::spline.control_vao().draw();
+	}
+	g::shaders.PNC().use();
+	g::shaders.PNC().view(view);
+	g::shaders.PNC().projection(projection);
+	g::spline.curve_vao().draw();
+	g::cart.vao().draw();
 }
 
 int main()

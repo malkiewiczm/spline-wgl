@@ -27,7 +27,6 @@ void _die(const char *msg, const char *file, int line);
 #define GET_CR(type, name) const type &name() const { return m_ ## name; }
 #define GET_R(type, name) GET_CR(type, name) type &name() { return m_ ## name; }
 #define ACC_V(type, name) GET_V(type, name) SET_V(type, name)
-#define ACC_CR(type, name) GET_CR(type, name) SET_R(type, name)
 #define ACC_R(type, name) GET_R(type, name) SET_R(type, name)
 
 template <typename T>
