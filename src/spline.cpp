@@ -9,6 +9,7 @@ void g::Spline::init()
 {
 	m_place_when_click = false;
 	m_show_control_mesh = true;
+	m_show_ui = false;
 	m_control_vao.init(GL_LINE_STRIP);
 	m_control_vao.update_buffers({ { glm::vec3(-5.f), glm::vec3(1.f, 0., 0.f) }, { glm::vec3(5.f), glm::vec3(0.f, 0., 1.f) } }, { 0, 1 });
 	std::vector<Vertex_PNC> vertex_data {
@@ -140,7 +141,15 @@ void g::Spline::update_control_vao()
 
 void g::Spline::update_ui_vao()
 {
-	
+	const glm::vec3 color(0.f);
+	std::vector<Vertex_PC> vertices {
+		{ { m_selection_rect[0].x, m_selection_rect[0].y, 0.f }, color },
+		{ { m_selection_rect[1].x, m_selection_rect[0].y, 0.f }, color },
+		{ { m_selection_rect[1].x, m_selection_rect[1].y, 0.f }, color },
+		{ { m_selection_rect[0].x, m_selection_rect[1].y, 0.f }, color }
+	};
+	std::vector<GLuint> indices { 0, 1, 1, 2, 2, 3, 3, 0 };
+	m_ui_vao.update_buffers(vertices, indices);
 }
 
 void g::Spline::update_curve_vao()
@@ -192,7 +201,6 @@ void g::Spline::add_pt(const glm::vec3 &p)
 	m_curve_pts.clear();
 	calc_spline3(m_control_pts, m_curve_pts);
 	update_control_vao();
-	update_ui_vao();
 	if (m_curve_pts.empty())
 		return;
 	update_curve_vao();
@@ -250,6 +258,26 @@ void g::Spline::edit_click_place()
 	add_pt(p);
 }
 
+void g::Spline::edit_click_start_drag()
+{
+	m_show_ui = true;
+	m_selection_rect[0] = g::mouse.get_ui_coordinates();
+	m_selection_rect[1] = g::mouse.get_ui_coordinates();
+	update_ui_vao();
+}
+
+void g::Spline::edit_click_drag()
+{
+	m_selection_rect[1] = g::mouse.get_ui_coordinates();
+	update_ui_vao();
+}
+
+void g::Spline::edit_click_stop_drag()
+{
+	m_selection_rect[1] = g::mouse.get_ui_coordinates();
+	m_show_ui = false;
+}
+
 void g::Spline::edit_click()
 {
 	if (! g::is_edit_mode)
@@ -259,5 +287,29 @@ void g::Spline::edit_click()
 	if (m_place_when_click) {
 		edit_click_place();
 		m_place_when_click = false;
+	} else {
+		edit_click_start_drag();
+	}
+}
+
+void g::Spline::edit_mouse_move()
+{
+	if (! g::is_edit_mode)
+		return;
+	if (! g::camera.is_camera_ortho())
+		return;
+	if (! m_place_when_click) {
+		edit_click_drag();
+	}
+}
+
+void g::Spline::edit_unclick()
+{
+	if (! g::is_edit_mode)
+		return;
+	if (! g::camera.is_camera_ortho())
+		return;
+	if (! m_place_when_click) {
+		edit_click_stop_drag();
 	}
 }

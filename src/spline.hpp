@@ -13,16 +13,21 @@ namespace g {
 		};
 		void init();
 		void edit_click();
+		void edit_unclick();
+		void edit_mouse_move();
 		void add_pt(const glm::vec3 &p);
 		Piece get_piece(const float distance);
 		ACC_V(bool, place_when_click)
 		ACC_V(bool, show_control_mesh)
+		GET_V(bool, show_ui)
 		GET_CR(VAO<Vertex_PC>, control_vao)
 		GET_CR(VAO<Vertex_PNC>, curve_vao)
 		GET_CR(VAO<Vertex_PC>, ui_vao)
 	private:
 		bool m_place_when_click;
 		bool m_show_control_mesh;
+		bool m_show_ui;
+		glm::vec2 m_selection_rect[2];
 		VAO<Vertex_PC> m_control_vao;
 		VAO<Vertex_PNC> m_curve_vao;
 		VAO<Vertex_PC> m_ui_vao;
@@ -32,6 +37,9 @@ namespace g {
 		void update_curve_vao();
 		void update_ui_vao();
 		void edit_click_place();
+		void edit_click_start_drag();
+		void edit_click_drag();
+		void edit_click_stop_drag();
 	};
 	extern Spline spline;
 }

@@ -144,6 +144,7 @@ static EM_BOOL on_mouse(int eventType, const EmscriptenMouseEvent *mouseEvent, v
 			g::cart.reset();
 		} else if (eventType == EMSCRIPTEN_EVENT_MOUSEUP) {
 			g::mouse.down(false);
+			g::spline.edit_unclick();
 		}
 	} else if (mouseEvent->button == 2 && eventType == EMSCRIPTEN_EVENT_MOUSEDOWN && g::camera.is_camera_3d()) {
 		if (g::mouse.locked()) {
@@ -153,11 +154,15 @@ static EM_BOOL on_mouse(int eventType, const EmscriptenMouseEvent *mouseEvent, v
 		}
 		g::key::release_all();
 	}
-	if (eventType == EMSCRIPTEN_EVENT_MOUSEMOVE && g::camera.is_camera_3d() && g::mouse.locked()) {
-		glm::vec2 m { mouseEvent->movementX, mouseEvent->movementY };
-		m /= 400.f;
-		g::camera_3d.rotate_y(m.x);
-		g::camera_3d.rotate_x(m.y);
+	if (eventType == EMSCRIPTEN_EVENT_MOUSEMOVE) {
+		if (g::camera.is_camera_3d() && g::mouse.locked()) {
+			glm::vec2 m { mouseEvent->movementX, mouseEvent->movementY };
+			m /= 400.f;
+			g::camera_3d.rotate_y(m.x);
+			g::camera_3d.rotate_x(m.y);
+		} else {
+			g::spline.edit_mouse_move();
+		}
 	}
 	return true;
 }
@@ -257,7 +262,9 @@ static void draw()
 	// draw UI
 	g::shaders.PC().view(glm::mat4(1.f));
 	g::shaders.PC().projection(g::camera.calc_ui_projection());
-	g::spline.ui_vao().draw();
+	if (g::spline.show_ui()) {
+		g::spline.ui_vao().draw();
+	}
 }
 
 int main()
