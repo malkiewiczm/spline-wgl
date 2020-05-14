@@ -10,7 +10,7 @@ void g::Spline::init()
 	m_place_when_click = false;
 	m_show_control_mesh = true;
 	m_show_ui = false;
-	m_control_vao.init(GL_LINE_STRIP);
+	m_control_vao.init(GL_LINES);
 	m_control_vao.update_buffers({ { glm::vec3(-5.f), glm::vec3(1.f, 0., 0.f) }, { glm::vec3(5.f), glm::vec3(0.f, 0., 1.f) } }, { 0, 1 });
 	std::vector<Vertex_PNC> vertex_data {
 		{ { 0.273279f, 1.050624f, -2.005395f }, { 0.f, 0.f, 1.f }, { 0.89596240119633f, 0.82284005249184f, 0.7466048158208f } },
@@ -126,15 +126,38 @@ g::Spline::Piece g::Spline::get_piece(const float distance)
 
 void g::Spline::update_control_vao()
 {
-	const glm::vec3 color { 0.5f, 0.f, 0.f };
-	std::vector<Vertex_PC> vertices(m_control_pts.size());
-	std::vector<GLuint> indices(vertices.size());
-	for (unsigned i = 0; i < vertices.size(); ++i) {
-		vertices[i].position = m_control_pts[i];
-		vertices[i].color = color;
+	const glm::vec3 polygon_color { 0.5f, 0.f, 0.f };
+	const glm::vec3 box_color { 0.f, 0.f, 0.5f };
+	std::vector<Vertex_PC> vertices;
+	std::vector<GLuint> indices;
+	std::vector<glm::vec3> cube_corners(8);
+	std::vector<GLuint> cube_indices {
+		0, 1, 1, 5, 5, 4, 4, 0,
+		2, 3, 3, 7, 7, 6, 6, 2,
+		2, 0, 3, 1, 7, 5, 6, 4,
+	};
+	for (int i = 0; i < 8; ++i) {
+		constexpr float R = 0.2f;
+		cube_corners[i].x = (i & 1) ? R : -R;
+		cube_corners[i].y = ((i >> 1) & 1) ? R : -R;
+		cube_corners[i].z = ((i >> 2) & 1) ? R : -R;
 	}
-	for (unsigned i = 0; i < indices.size(); ++i) {
-		indices[i] = i;
+	for (unsigned i = 0; i < m_control_pts.size(); ++i) {
+		vertices.push_back({ m_control_pts[i], polygon_color });
+		for (int k = 0; k < 8; ++k) {
+			vertices.push_back({ m_control_pts[i] + cube_corners[k], box_color });
+		}
+	}
+	for (unsigned i = 1; i < m_control_pts.size(); ++i) {
+		const int k0 = (i - 1)*9;
+		const int k1 = i*9;
+		indices.push_back(k0);
+		indices.push_back(k1);
+	}
+	for (unsigned i = 0; i < m_control_pts.size(); ++i) {
+		for (int k = 0; k < 24; ++k) {
+			indices.push_back(i*9 + 1 + cube_indices[k]);
+		}
 	}
 	m_control_vao.update_buffers(vertices, indices);
 }

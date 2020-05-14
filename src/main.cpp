@@ -261,7 +261,7 @@ static void draw()
 	}
 	// draw UI
 	g::shaders.PC().view(glm::mat4(1.f));
-	g::shaders.PC().projection(g::camera.calc_ui_projection());
+	g::shaders.PC().projection(glm::mat4(1.f));
 	if (g::spline.show_ui()) {
 		g::spline.ui_vao().draw();
 	}

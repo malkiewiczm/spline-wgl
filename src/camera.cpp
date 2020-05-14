@@ -32,12 +32,6 @@ glm::mat4 g::Camera::calc_projection()
 	}
 }
 
-glm::mat4 g::Camera::calc_ui_projection()
-{
-	const float aspect = static_cast<float>(g::canvas_height) / g::canvas_width;
-	return glm::scale(glm::mat4(1.f), glm::vec3(1.f, aspect, 1.f));
-}
-
 glm::mat4 g::Camera::calc_view()
 {
 	switch (m_kind) {
