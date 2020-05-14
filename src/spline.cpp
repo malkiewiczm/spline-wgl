@@ -128,6 +128,7 @@ void g::Spline::update_control_vao()
 {
 	const glm::vec3 polygon_color { 0.5f, 0.f, 0.f };
 	const glm::vec3 box_color { 0.f, 0.f, 0.5f };
+	const glm::vec3 box_color_selected { 1.f, 1.f, 1.f };
 	std::vector<Vertex_PC> vertices;
 	std::vector<GLuint> indices;
 	std::vector<glm::vec3> cube_corners(8);
@@ -144,8 +145,14 @@ void g::Spline::update_control_vao()
 	}
 	for (unsigned i = 0; i < m_control_pts.size(); ++i) {
 		vertices.push_back({ m_control_pts[i], polygon_color });
+		glm::vec3 color;
+		if (std::find(m_selection.begin(), m_selection.end(), i) != m_selection.end()) {
+			color = box_color_selected;
+		} else {
+			color = box_color;
+		}
 		for (int k = 0; k < 8; ++k) {
-			vertices.push_back({ m_control_pts[i] + cube_corners[k], box_color });
+			vertices.push_back({ m_control_pts[i] + cube_corners[k], color });
 		}
 	}
 	for (unsigned i = 1; i < m_control_pts.size(); ++i) {
@@ -253,17 +260,14 @@ void g::Spline::add_pt(const glm::vec3 &p)
 	}
 }
 
-void g::Spline::edit_click_place()
+static glm::vec3 to_planar(const glm::vec2 &p_in)
 {
-	static glm::vec3 last_placement { 0.f, 0.f, 0.f };
-	glm::vec3 p { g::mouse.x(), g::mouse.y(), 0.f };
 	const float zoom = g::camera_ortho.zoom();
-	p.x = (2.f*(p.x / g::canvas_width) - 1.f)*zoom;
-	p.y = -(2.f*(p.y / g::canvas_height) - 1.f)*zoom;
+	glm::vec3 p { p_in.x*zoom, p_in.y*zoom, 0.f };
 	if (g::canvas_width > g::canvas_height) {
-		p.y *= aspecty();
+		p.y *= g::aspecty();
 	} else {
-		p.x *= aspectx();
+		p.x *= g::aspectx();
 	}
 	if (g::camera_ortho.side() == g::CameraOrtho::TOP || g::camera_ortho.side() == g::CameraOrtho::BOTTOM) {
 		p.y = -p.y;
@@ -271,25 +275,30 @@ void g::Spline::edit_click_place()
 	if (g::camera_ortho.side() == g::CameraOrtho::FRONT || g::camera_ortho.side() == g::CameraOrtho::BACK) {
 		p.x = -p.x;
 	}
-	{
-		const glm::mat4 &mv =g::camera_ortho.transformation();
-		glm::vec4 v4 { p.x, p.y, p.z, 1. };
-		v4 = mv*v4;
-		p.x = v4.x;
-		p.y = v4.y;
-		p.z = v4.z;
-		switch (g::camera_ortho.side()) {
-		case g::CameraOrtho::RIGHT:
-		case g::CameraOrtho::LEFT:
-			p.z = last_placement.z;
-			break;
-		case g::CameraOrtho::TOP:
-		case g::CameraOrtho::BOTTOM:
-			p.y = last_placement.y;
-			break;
-		default:
-			p.x = last_placement.x;
-		}
+	return p;
+}
+
+void g::Spline::edit_click_place()
+{
+	static glm::vec3 last_placement { 0.f, 0.f, 0.f };
+	glm::vec3 p = to_planar(g::mouse.get_ui_coordinates());
+	const glm::mat4 &mv = g::camera_ortho.transformation();
+	glm::vec4 v4 { p.x, p.y, p.z, 1. };
+	v4 = mv*v4;
+	p.x = v4.x;
+	p.y = v4.y;
+	p.z = v4.z;
+	switch (g::camera_ortho.side()) {
+	case g::CameraOrtho::RIGHT:
+	case g::CameraOrtho::LEFT:
+		p.z = last_placement.z;
+		break;
+	case g::CameraOrtho::TOP:
+	case g::CameraOrtho::BOTTOM:
+		p.y = last_placement.y;
+		break;
+	default:
+		p.x = last_placement.x;
 	}
 	last_placement = p;
 	add_pt(p);
@@ -309,10 +318,63 @@ void g::Spline::edit_click_drag()
 	update_ui_select_vao();
 }
 
+static bool AABB(float x, float y, float left, float right, float bottom, float top)
+{
+	return (x >= left && x <= right) && (y >= bottom && y <= top);
+}
+
 void g::Spline::edit_click_stop_drag()
 {
 	m_selection_rect[1] = g::mouse.get_ui_coordinates();
+	glm::vec3 planar_selection[2] { to_planar(m_selection_rect[0]), to_planar(m_selection_rect[1]) };
 	m_show_ui = false;
+	m_selection.clear();
+	float left, right, top, bottom;
+	if (planar_selection[0].x > planar_selection[1].x) {
+		left = planar_selection[1].x;
+		right = planar_selection[0].x;
+	} else {
+		left = planar_selection[0].x;
+		right = planar_selection[1].x;
+	}
+	if (planar_selection[0].y > planar_selection[1].y) {
+		bottom = planar_selection[1].y;
+		top = planar_selection[0].y;
+	} else {
+		bottom = planar_selection[0].y;
+		top = planar_selection[1].y;
+	}
+	switch (g::camera_ortho.side()) {
+	case g::CameraOrtho::RIGHT:
+	case g::CameraOrtho::LEFT:
+		for (unsigned i = 0; i < m_control_pts.size(); ++i) {
+			const float x = (g::camera_ortho.side() == g::CameraOrtho::RIGHT) ? m_control_pts[i].x : -m_control_pts[i].x;
+			const float y = m_control_pts[i].y;
+			if (AABB(x, y, left, right, bottom, top)) {
+				m_selection.push_back(i);
+			}
+		}
+		break;
+	case g::CameraOrtho::TOP:
+	case g::CameraOrtho::BOTTOM:
+		for (unsigned i = 0; i < m_control_pts.size(); ++i) {
+			const float x = m_control_pts[i].x;
+			const float y = (g::camera_ortho.side() == g::CameraOrtho::TOP) ? m_control_pts[i].z : -m_control_pts[i].z;
+			if (AABB(x, y, left, right, bottom, top)) {
+				m_selection.push_back(i);
+			}
+		}
+		break;
+	default:
+		for (unsigned i = 0; i < m_control_pts.size(); ++i) {
+			const float x = (g::camera_ortho.side() == g::CameraOrtho::BACK) ? m_control_pts[i].z : -m_control_pts[i].z;
+			const float y = m_control_pts[i].y;
+			if (AABB(x, y, left, right, bottom, top)) {
+				m_selection.push_back(i);
+			}
+		}
+	}
+	update_control_vao();
 }
 
 void g::Spline::edit_click()

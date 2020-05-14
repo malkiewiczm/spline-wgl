@@ -32,6 +32,7 @@ namespace g {
 		bool m_show_control_mesh;
 		bool m_show_ui;
 		glm::vec2 m_selection_rect[2];
+		std::vector<int> m_selection;
 		VAO<Vertex_PC> m_control_vao;
 		VAO<Vertex_PNC> m_curve_vao;
 		VAO<Vertex_PC> m_ui_vao;
