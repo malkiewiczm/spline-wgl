@@ -182,6 +182,17 @@ void g::Spline::update_ui_select_vao()
 	m_ui_vao.update_buffers(vertices, indices);
 }
 
+void g::Spline::update_ui_move_vao()
+{
+	const glm::vec3 color(0.f);
+	std::vector<Vertex_PC> vertices {
+		{ { m_selection_rect[0].x, m_selection_rect[0].y, 0.f }, color },
+		{ { m_selection_rect[1].x, m_selection_rect[1].y, 0.f }, color }
+	};
+	std::vector<GLuint> indices { 0, 1 };
+	m_ui_vao.update_buffers(vertices, indices);
+}
+
 void g::Spline::update_ui_insert_vao()
 {
 	const glm::vec3 color(0.f);
@@ -239,9 +250,8 @@ void g::Spline::update_curve_vao()
 	m_curve_vao.update_buffers(vertices, indices);
 }
 
-void g::Spline::add_pt(const glm::vec3 &p)
+void g::Spline::recalculate_curve_all()
 {
-	m_control_pts.push_back(p);
 	if (m_control_pts.size() <= 1)
 		return;
 	m_curve_pts.clear();
@@ -258,6 +268,12 @@ void g::Spline::add_pt(const glm::vec3 &p)
 			m_curve_pts[i].distance = m_curve_pts[i - 1].distance + delta;
 		}
 	}
+}
+
+void g::Spline::add_pt(const glm::vec3 &p)
+{
+	m_control_pts.push_back(p);
+	recalculate_curve_all();
 }
 
 static glm::vec3 to_planar(const glm::vec2 &p_in)
@@ -304,7 +320,7 @@ void g::Spline::edit_click_place()
 	add_pt(p);
 }
 
-void g::Spline::edit_click_start_drag()
+void g::Spline::edit_click_start_select()
 {
 	m_show_ui = true;
 	m_selection_rect[0] = g::mouse.get_ui_coordinates();
@@ -312,7 +328,7 @@ void g::Spline::edit_click_start_drag()
 	update_ui_select_vao();
 }
 
-void g::Spline::edit_click_drag()
+void g::Spline::edit_click_select()
 {
 	m_selection_rect[1] = g::mouse.get_ui_coordinates();
 	update_ui_select_vao();
@@ -323,7 +339,7 @@ static bool AABB(float x, float y, float left, float right, float bottom, float 
 	return (x >= left && x <= right) && (y >= bottom && y <= top);
 }
 
-void g::Spline::edit_click_stop_drag()
+void g::Spline::edit_click_stop_select()
 {
 	m_selection_rect[1] = g::mouse.get_ui_coordinates();
 	glm::vec3 planar_selection[2] { to_planar(m_selection_rect[0]), to_planar(m_selection_rect[1]) };
@@ -377,6 +393,44 @@ void g::Spline::edit_click_stop_drag()
 	update_control_vao();
 }
 
+void g::Spline::edit_click_start_move()
+{
+	m_show_ui = true;
+	m_selection_rect[0] = g::mouse.get_ui_coordinates();
+	m_selection_rect[1] = m_selection_rect[0];
+	m_original_control_pts.resize(m_selection.size());
+	for (unsigned i = 0; i < m_selection.size(); ++i) {
+		const int k = m_selection[i];
+		m_original_control_pts[i] = m_control_pts[k];
+	}
+	update_ui_move_vao();
+}
+
+void g::Spline::edit_click_move()
+{
+	m_selection_rect[1] = g::mouse.get_ui_coordinates();
+	update_ui_move_vao();
+	const glm::vec2 diff = m_selection_rect[1] - m_selection_rect[0];
+	glm::vec3 p = to_planar(diff);
+	const glm::mat4 &mv = g::camera_ortho.transformation();
+	glm::vec4 v4 { p.x, p.y, p.z, 1. };
+	v4 = mv*v4;
+	p.x = v4.x;
+	p.y = v4.y;
+	p.z = v4.z;
+	for (unsigned i = 0; i < m_selection.size(); ++i) {
+		const int k = m_selection[i];
+		m_control_pts[k] = m_original_control_pts[i] + p;
+	}
+	recalculate_curve_all();
+}
+
+void g::Spline::edit_click_stop_move()
+{
+	m_show_ui = false;
+	edit_click_move();
+}
+
 void g::Spline::edit_click()
 {
 	if (! g::is_edit_mode)
@@ -385,13 +439,13 @@ void g::Spline::edit_click()
 		return;
 	switch (m_edit_mode) {
 	case EM_SELECT:
-		edit_click_start_drag();
+		edit_click_start_select();
 		break;
 	case EM_INSERT:
 		edit_click_place();
 		break;
 	case EM_MOVE:
-
+		edit_click_start_move();
 		break;
 	}
 }
@@ -404,12 +458,17 @@ void g::Spline::edit_mouse_move()
 		return;
 	switch (m_edit_mode) {
 	case EM_SELECT:
-		edit_click_drag();
+		if (g::mouse.down()) {
+			edit_click_select();
+		}
 		break;
 	case EM_INSERT:
 		update_ui_insert_vao();
 		break;
 	case EM_MOVE:
+		if (g::mouse.down()) {
+			edit_click_move();
+		}
 		break;
 	}
 }
@@ -422,11 +481,12 @@ void g::Spline::edit_unclick()
 		return;
 	switch (m_edit_mode) {
 	case EM_SELECT:
-		edit_click_stop_drag();
+		edit_click_stop_select();
 		break;
 	case EM_INSERT:
 		break;
 	case EM_MOVE:
+		edit_click_stop_move();
 		break;
 	}
 }
@@ -443,6 +503,7 @@ void g::Spline::edit_mode(EditMode l_edit_mode)
 		update_ui_insert_vao();
 		break;
 	case EM_MOVE:
+		m_show_ui = false;
 		break;
 	}
 }

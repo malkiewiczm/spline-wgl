@@ -38,14 +38,20 @@ namespace g {
 		VAO<Vertex_PC> m_ui_vao;
 		std::vector<Piece> m_curve_pts;
 		std::vector<glm::vec3> m_control_pts;
+		std::vector<glm::vec3> m_original_control_pts;
 		void update_control_vao();
 		void update_curve_vao();
 		void update_ui_select_vao();
 		void update_ui_insert_vao();
+		void update_ui_move_vao();
+		void recalculate_curve_all();
 		void edit_click_place();
-		void edit_click_start_drag();
-		void edit_click_drag();
-		void edit_click_stop_drag();
+		void edit_click_start_select();
+		void edit_click_select();
+		void edit_click_stop_select();
+		void edit_click_start_move();
+		void edit_click_move();
+		void edit_click_stop_move();
 	};
 	extern Spline spline;
 }
