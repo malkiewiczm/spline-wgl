@@ -7,7 +7,7 @@ g::Spline g::spline;
 
 void g::Spline::init()
 {
-	m_place_when_click = false;
+	m_edit_mode = EM_SELECT;
 	m_show_control_mesh = true;
 	m_show_ui = false;
 	m_control_vao.init(GL_LINES);
@@ -162,7 +162,7 @@ void g::Spline::update_control_vao()
 	m_control_vao.update_buffers(vertices, indices);
 }
 
-void g::Spline::update_ui_vao()
+void g::Spline::update_ui_select_vao()
 {
 	const glm::vec3 color(0.f);
 	std::vector<Vertex_PC> vertices {
@@ -172,6 +172,22 @@ void g::Spline::update_ui_vao()
 		{ { m_selection_rect[0].x, m_selection_rect[1].y, 0.f }, color }
 	};
 	std::vector<GLuint> indices { 0, 1, 1, 2, 2, 3, 3, 0 };
+	m_ui_vao.update_buffers(vertices, indices);
+}
+
+void g::Spline::update_ui_insert_vao()
+{
+	const glm::vec3 color(0.f);
+	const glm::vec2 v = g::mouse.get_ui_coordinates();
+	constexpr float Rx = 0.02f;
+	const float Ry = Rx*g::aspectx();
+	std::vector<Vertex_PC> vertices {
+		{ { v.x - Rx, v.y - Ry, 0.f }, color },
+		{ { v.x + Rx, v.y + Ry, 0.f }, color },
+		{ { v.x + Rx, v.y - Ry, 0.f }, color },
+		{ { v.x - Rx, v.y + Ry, 0.f }, color },
+	};
+	std::vector<GLuint> indices { 0, 1, 2, 3 };
 	m_ui_vao.update_buffers(vertices, indices);
 }
 
@@ -245,11 +261,9 @@ void g::Spline::edit_click_place()
 	p.x = (2.f*(p.x / g::canvas_width) - 1.f)*zoom;
 	p.y = -(2.f*(p.y / g::canvas_height) - 1.f)*zoom;
 	if (g::canvas_width > g::canvas_height) {
-		const float aspect = static_cast<float>(g::canvas_height) / g::canvas_width;
-		p.y *= aspect;
+		p.y *= aspecty();
 	} else {
-		const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
-		p.x *= aspect;
+		p.x *= aspectx();
 	}
 	if (g::camera_ortho.side() == g::CameraOrtho::TOP || g::camera_ortho.side() == g::CameraOrtho::BOTTOM) {
 		p.y = -p.y;
@@ -285,14 +299,14 @@ void g::Spline::edit_click_start_drag()
 {
 	m_show_ui = true;
 	m_selection_rect[0] = g::mouse.get_ui_coordinates();
-	m_selection_rect[1] = g::mouse.get_ui_coordinates();
-	update_ui_vao();
+	m_selection_rect[1] = m_selection_rect[0];
+	update_ui_select_vao();
 }
 
 void g::Spline::edit_click_drag()
 {
 	m_selection_rect[1] = g::mouse.get_ui_coordinates();
-	update_ui_vao();
+	update_ui_select_vao();
 }
 
 void g::Spline::edit_click_stop_drag()
@@ -307,11 +321,16 @@ void g::Spline::edit_click()
 		return;
 	if (! g::camera.is_camera_ortho())
 		return;
-	if (m_place_when_click) {
-		edit_click_place();
-		m_place_when_click = false;
-	} else {
+	switch (m_edit_mode) {
+	case EM_SELECT:
 		edit_click_start_drag();
+		break;
+	case EM_INSERT:
+		edit_click_place();
+		break;
+	case EM_MOVE:
+
+		break;
 	}
 }
 
@@ -321,8 +340,15 @@ void g::Spline::edit_mouse_move()
 		return;
 	if (! g::camera.is_camera_ortho())
 		return;
-	if (! m_place_when_click) {
+	switch (m_edit_mode) {
+	case EM_SELECT:
 		edit_click_drag();
+		break;
+	case EM_INSERT:
+		update_ui_insert_vao();
+		break;
+	case EM_MOVE:
+		break;
 	}
 }
 
@@ -332,7 +358,29 @@ void g::Spline::edit_unclick()
 		return;
 	if (! g::camera.is_camera_ortho())
 		return;
-	if (! m_place_when_click) {
+	switch (m_edit_mode) {
+	case EM_SELECT:
 		edit_click_stop_drag();
+		break;
+	case EM_INSERT:
+		break;
+	case EM_MOVE:
+		break;
+	}
+}
+
+void g::Spline::edit_mode(EditMode l_edit_mode)
+{
+	m_edit_mode = l_edit_mode;
+	switch (m_edit_mode) {
+	case EM_SELECT:
+		m_show_ui = false;
+		break;
+	case EM_INSERT:
+		m_show_ui = true;
+		update_ui_insert_vao();
+		break;
+	case EM_MOVE:
+		break;
 	}
 }

@@ -57,4 +57,10 @@ namespace g {
 	extern int canvas_width;
 	extern int canvas_height;
 	extern bool is_edit_mode;
+	static inline float aspectx() {
+		return static_cast<float>(canvas_width) / canvas_height;
+	}
+	static inline float aspecty() {
+		return static_cast<float>(canvas_height) / canvas_width;
+	}
 }

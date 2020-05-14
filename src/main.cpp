@@ -47,7 +47,23 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 			ret = true;
 			break;
 		case 'Q':
-			g::spline.place_when_click( ! g::spline.place_when_click());
+			if (g::camera.is_camera_ortho()) {
+				if (g::spline.edit_mode() == g::Spline::EM_INSERT) {
+					g::spline.edit_mode(g::Spline::EM_SELECT);
+				} else {
+					g::spline.edit_mode(g::Spline::EM_INSERT);
+				}
+			}
+			ret = true;
+			break;
+		case 'M':
+			if (g::camera.is_camera_ortho()) {
+				if (g::spline.edit_mode() == g::Spline::EM_MOVE) {
+					g::spline.edit_mode(g::Spline::EM_SELECT);
+				} else {
+					g::spline.edit_mode(g::Spline::EM_MOVE);
+				}
+			}
 			ret = true;
 			break;
 		case 'F':
@@ -97,6 +113,9 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 			ret = true;
 			break;
 		case 'S':
+			if (g::camera.is_camera_ortho()) {
+				g::spline.edit_mode(g::Spline::EM_SELECT);
+			}
 			g::key::down_down = true;
 			ret = true;
 			break;
@@ -262,7 +281,7 @@ static void draw()
 	// draw UI
 	g::shaders.PC().view(glm::mat4(1.f));
 	g::shaders.PC().projection(glm::mat4(1.f));
-	if (g::spline.show_ui()) {
+	if (g::spline.show_ui() && g::camera.is_camera_ortho()) {
 		g::spline.ui_vao().draw();
 	}
 }

@@ -17,17 +17,14 @@ glm::mat4 g::Camera::calc_projection()
 		const float zoom = g::camera_ortho.zoom();
 		glm::mat4 proj = glm::ortho(-zoom, zoom, -zoom, zoom, -50.f, 50.f);
 		if (g::canvas_width > g::canvas_height) {
-			const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
-			return glm::scale(proj, glm::vec3(1.f, aspect, 1.f));
+			return glm::scale(proj, glm::vec3(1.f, g::aspectx(), 1.f));
 		} else {
-			const float aspect = static_cast<float>(g::canvas_height) / g::canvas_width;
-			return glm::scale(proj, glm::vec3(aspect, 1.f, 1.f));
+			return glm::scale(proj, glm::vec3(g::aspecty(), 1.f, 1.f));
 		}
 	}
 	default: {
 		constexpr float fov = TORAD(45.f);
-		const float aspect = static_cast<float>(g::canvas_width) / g::canvas_height;
-		return glm::perspective(fov, aspect, 0.1f, 200.f);
+		return glm::perspective(fov, g::aspectx(), 0.1f, 200.f);
 	}
 	}
 }
