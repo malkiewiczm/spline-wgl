@@ -103,6 +103,7 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 			break;
 		case '3':
 			g::camera.kind(g::Camera::CAMERA_3D);
+			g::spline.edit_mode(g::Spline::EM_SELECT);
 			ret = true;
 			break;
 		case '4':
