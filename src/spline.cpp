@@ -55,7 +55,7 @@ static void append_bezier(std::vector<g::Spline::Piece> &pts, const glm::vec3 c[
 	}
 }
 
-static void calc_spline3(const std::vector<glm::vec3> &m_control_pts, std::vector<g::Spline::Piece> &pts)
+static void calc_spline3(const std::vector<g::Spline::ControlPoint> &m_control_pts, std::vector<g::Spline::Piece> &pts)
 
 {
 	if (m_control_pts.size() < 4)
@@ -64,9 +64,9 @@ static void calc_spline3(const std::vector<glm::vec3> &m_control_pts, std::vecto
 	std::vector<glm::vec3> c((m_control_pts.size() - 3)*deg + 1);
 	const unsigned last_i = m_control_pts.size() - 2;
 	for (unsigned i = 1; ; ++i) {
-		const glm::vec3 &am = m_control_pts[i - 1];
-		const glm::vec3 &a = m_control_pts[i];
-		const glm::vec3 &ap = m_control_pts[i + 1];
+		const glm::vec3 &am = m_control_pts[i - 1].position;
+		const glm::vec3 &a = m_control_pts[i].position;
+		const glm::vec3 &ap = m_control_pts[i + 1].position;
 		const int b = (i - 1)*deg;
 		const glm::vec3 r0 = glm::mix(am, a, 2.f/3.f);
 		const glm::vec3 r1 = glm::mix(a, ap, 1.f/3.f);
@@ -144,7 +144,7 @@ void g::Spline::update_control_vao()
 		cube_corners[i].z = ((i >> 2) & 1) ? R : -R;
 	}
 	for (unsigned i = 0; i < m_control_pts.size(); ++i) {
-		vertices.push_back({ m_control_pts[i], polygon_color });
+		vertices.push_back({ m_control_pts[i].position, polygon_color });
 		glm::vec3 color;
 		if (std::find(m_selection.begin(), m_selection.end(), i) != m_selection.end()) {
 			color = box_color_selected;
@@ -152,7 +152,7 @@ void g::Spline::update_control_vao()
 			color = box_color;
 		}
 		for (int k = 0; k < 8; ++k) {
-			vertices.push_back({ m_control_pts[i] + cube_corners[k], color });
+			vertices.push_back({ m_control_pts[i].position + cube_corners[k], color });
 		}
 	}
 	for (unsigned i = 1; i < m_control_pts.size(); ++i) {
@@ -272,7 +272,7 @@ void g::Spline::recalculate_curve_all()
 
 void g::Spline::add_pt(const glm::vec3 &p)
 {
-	m_control_pts.push_back(p);
+	m_control_pts.push_back({ p, 0. });
 	recalculate_curve_all();
 }
 
@@ -362,7 +362,8 @@ void g::Spline::edit_click_stop_select()
 	const glm::mat4 view = g::camera.calc_view();
 	const glm::mat4 proj = g::camera.calc_projection();
 	for (unsigned i = 0; i < m_control_pts.size(); ++i) {
-		glm::vec4 cp { m_control_pts[i].x, m_control_pts[i].y, m_control_pts[i].z, 1.f };
+		const glm::vec3 &cp3 = m_control_pts[i].position;
+		glm::vec4 cp { cp3.x, cp3.y, cp3.z, 1.f };
 		cp = view*cp;
 		cp = proj*cp;
 		if (AABB(cp.x / cp.w, cp.y / cp.w, left, right, bottom, top)) {
@@ -399,7 +400,7 @@ void g::Spline::edit_click_move()
 	p.z = v4.z;
 	for (unsigned i = 0; i < m_selection.size(); ++i) {
 		const int k = m_selection[i];
-		m_control_pts[k] = m_original_control_pts[i] + p;
+		m_control_pts[k] = { m_original_control_pts[i].position + p, m_original_control_pts[i].roll };
 	}
 	recalculate_curve_all();
 }
@@ -495,7 +496,7 @@ void g::Spline::edit_mode(EditMode l_edit_mode)
 	}
 }
 
-void:: g::Spline::edit_delete_selected()
+void g::Spline::edit_delete_selected()
 {
 	std::sort(m_selection.begin(), m_selection.end(), std::greater<int>());
 	for (unsigned i = 0; i < m_selection.size(); ++i) {;
@@ -503,4 +504,13 @@ void:: g::Spline::edit_delete_selected()
 	}
 	m_selection.clear();
 	recalculate_curve_all();
+}
+
+void g::Spline::edit_select_all()
+{
+	m_selection.resize(m_control_pts.size());
+	for (unsigned i = 0; i < m_control_pts.size(); ++i) {
+		m_selection[i] = i;
+	}
+	update_control_vao();
 }

@@ -11,6 +11,10 @@ namespace g {
 			glm::vec3 tangent;
 			float distance;
 		};
+		struct ControlPoint {
+			glm::vec3 position;
+			float roll;
+		};
 		enum EditMode {
 			EM_SELECT, EM_INSERT, EM_MOVE
 		};
@@ -19,6 +23,7 @@ namespace g {
 		void edit_unclick();
 		void edit_mouse_move();
 		void edit_delete_selected();
+		void edit_select_all();
 		void add_pt(const glm::vec3 &p);
 		Piece get_piece(const float distance);
 		GET_V(EditMode, edit_mode)
@@ -38,8 +43,8 @@ namespace g {
 		VAO<Vertex_PNC> m_curve_vao;
 		VAO<Vertex_PC> m_ui_vao;
 		std::vector<Piece> m_curve_pts;
-		std::vector<glm::vec3> m_control_pts;
-		std::vector<glm::vec3> m_original_control_pts;
+		std::vector<ControlPoint> m_control_pts;
+		std::vector<ControlPoint> m_original_control_pts;
 		void update_control_vao();
 		void update_curve_vao();
 		void update_ui_select_vao();

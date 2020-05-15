@@ -115,7 +115,11 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 			ret = true;
 			break;
 		case 'A':
-			g::key::down_left = true;
+			if (keyEvent->ctrlKey) {
+				g::spline.edit_select_all();
+			} else {
+				g::key::down_left = true;
+			}
 			ret = true;
 			break;
 		case 'S':
