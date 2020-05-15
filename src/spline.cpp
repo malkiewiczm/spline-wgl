@@ -252,7 +252,7 @@ void g::Spline::update_curve_vao()
 
 void g::Spline::recalculate_curve_all()
 {
-	if (m_control_pts.size() <= 1)
+	if (m_control_pts.empty())
 		return;
 	m_curve_pts.clear();
 	calc_spline3(m_control_pts, m_curve_pts);
@@ -493,4 +493,14 @@ void g::Spline::edit_mode(EditMode l_edit_mode)
 		m_show_ui = false;
 		break;
 	}
+}
+
+void:: g::Spline::edit_delete_selected()
+{
+	std::sort(m_selection.begin(), m_selection.end(), std::greater<int>());
+	for (unsigned i = 0; i < m_selection.size(); ++i) {;
+		m_control_pts.erase(m_control_pts.begin() + m_selection[i]);
+	}
+	m_selection.clear();
+	recalculate_curve_all();
 }

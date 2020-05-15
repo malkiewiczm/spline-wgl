@@ -18,6 +18,7 @@ namespace g {
 		void edit_click();
 		void edit_unclick();
 		void edit_mouse_move();
+		void edit_delete_selected();
 		void add_pt(const glm::vec3 &p);
 		Piece get_piece(const float distance);
 		GET_V(EditMode, edit_mode)

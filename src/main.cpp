@@ -25,7 +25,9 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 	UNUSED(userData);
 	const bool keydown = eventType == EMSCRIPTEN_EVENT_KEYDOWN;
 	char keyCode;
-	if (keyEvent->code[0] == 'K')
+	if (std::strcmp(keyEvent->code, "Delete") == 0)
+		keyCode = 'd';
+	else if (keyEvent->code[0] == 'K')
 		keyCode = keyEvent->code[3];
 	else if (keyEvent->code[0] == 'D')
 		keyCode = keyEvent->code[5];
@@ -65,6 +67,9 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 				}
 			}
 			ret = true;
+			break;
+		case 'd':
+			g::spline.edit_delete_selected();
 			break;
 		case 'F':
 			g::camera_ortho.side(g::CameraOrtho::FRONT);
