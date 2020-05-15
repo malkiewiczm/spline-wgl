@@ -91,8 +91,8 @@ void g::CameraOrtho::init()
 	m_ortho_rotations[LEFT] = glm::rotate(glm::mat4(1.f), d180, y_axis);
 	m_ortho_rotations[TOP] = glm::rotate(glm::mat4(1.f), d90, x_axis);
 	m_ortho_rotations[BOTTOM] = glm::rotate(glm::mat4(1.f), d270, x_axis);
-	m_ortho_rotations[FRONT] = glm::rotate(glm::mat4(1.f), d90, y_axis);
-	m_ortho_rotations[BACK] = glm::rotate(glm::mat4(1.f), d270, y_axis);
+	m_ortho_rotations[FRONT] = glm::rotate(glm::mat4(1.f), d270, y_axis);
+	m_ortho_rotations[BACK] = glm::rotate(glm::mat4(1.f), d90, y_axis);
 	reset();
 }
 

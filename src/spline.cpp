@@ -342,52 +342,31 @@ static bool AABB(float x, float y, float left, float right, float bottom, float 
 void g::Spline::edit_click_stop_select()
 {
 	m_selection_rect[1] = g::mouse.get_ui_coordinates();
-	glm::vec3 planar_selection[2] { to_planar(m_selection_rect[0]), to_planar(m_selection_rect[1]) };
 	m_show_ui = false;
 	m_selection.clear();
 	float left, right, top, bottom;
-	if (planar_selection[0].x > planar_selection[1].x) {
-		left = planar_selection[1].x;
-		right = planar_selection[0].x;
+	if (m_selection_rect[0].x > m_selection_rect[1].x) {
+		left = m_selection_rect[1].x;
+		right = m_selection_rect[0].x;
 	} else {
-		left = planar_selection[0].x;
-		right = planar_selection[1].x;
+		left = m_selection_rect[0].x;
+		right = m_selection_rect[1].x;
 	}
-	if (planar_selection[0].y > planar_selection[1].y) {
-		bottom = planar_selection[1].y;
-		top = planar_selection[0].y;
+	if (m_selection_rect[0].y > m_selection_rect[1].y) {
+		bottom = m_selection_rect[1].y;
+		top = m_selection_rect[0].y;
 	} else {
-		bottom = planar_selection[0].y;
-		top = planar_selection[1].y;
+		bottom = m_selection_rect[0].y;
+		top = m_selection_rect[1].y;
 	}
-	switch (g::camera_ortho.side()) {
-	case g::CameraOrtho::RIGHT:
-	case g::CameraOrtho::LEFT:
-		for (unsigned i = 0; i < m_control_pts.size(); ++i) {
-			const float x = (g::camera_ortho.side() == g::CameraOrtho::RIGHT) ? m_control_pts[i].x : -m_control_pts[i].x;
-			const float y = m_control_pts[i].y;
-			if (AABB(x, y, left, right, bottom, top)) {
-				m_selection.push_back(i);
-			}
-		}
-		break;
-	case g::CameraOrtho::TOP:
-	case g::CameraOrtho::BOTTOM:
-		for (unsigned i = 0; i < m_control_pts.size(); ++i) {
-			const float x = m_control_pts[i].x;
-			const float y = (g::camera_ortho.side() == g::CameraOrtho::TOP) ? m_control_pts[i].z : -m_control_pts[i].z;
-			if (AABB(x, y, left, right, bottom, top)) {
-				m_selection.push_back(i);
-			}
-		}
-		break;
-	default:
-		for (unsigned i = 0; i < m_control_pts.size(); ++i) {
-			const float x = (g::camera_ortho.side() == g::CameraOrtho::BACK) ? m_control_pts[i].z : -m_control_pts[i].z;
-			const float y = m_control_pts[i].y;
-			if (AABB(x, y, left, right, bottom, top)) {
-				m_selection.push_back(i);
-			}
+	const glm::mat4 view = g::camera.calc_view();
+	const glm::mat4 proj = g::camera.calc_projection();
+	for (unsigned i = 0; i < m_control_pts.size(); ++i) {
+		glm::vec4 cp { m_control_pts[i].x, m_control_pts[i].y, m_control_pts[i].z, 1.f };
+		cp = view*cp;
+		cp = proj*cp;
+		if (AABB(cp.x / cp.w, cp.y / cp.w, left, right, bottom, top)) {
+			m_selection.push_back(i);
 		}
 	}
 	update_control_vao();
@@ -435,17 +414,21 @@ void g::Spline::edit_click()
 {
 	if (! g::is_edit_mode)
 		return;
-	if (! g::camera.is_camera_ortho())
+	if (g::mouse.locked())
 		return;
 	switch (m_edit_mode) {
 	case EM_SELECT:
 		edit_click_start_select();
 		break;
 	case EM_INSERT:
-		edit_click_place();
+		if (g::camera.is_camera_ortho()) {
+			edit_click_place();
+		}
 		break;
 	case EM_MOVE:
-		edit_click_start_move();
+		if (g::camera.is_camera_ortho()) {
+			edit_click_start_move();
+		}
 		break;
 	}
 }
@@ -454,7 +437,7 @@ void g::Spline::edit_mouse_move()
 {
 	if (! g::is_edit_mode)
 		return;
-	if (! g::camera.is_camera_ortho())
+	if (g::mouse.locked())
 		return;
 	switch (m_edit_mode) {
 	case EM_SELECT:
@@ -463,10 +446,12 @@ void g::Spline::edit_mouse_move()
 		}
 		break;
 	case EM_INSERT:
-		update_ui_insert_vao();
+		if (g::camera.is_camera_ortho()) {
+			update_ui_insert_vao();
+		}
 		break;
 	case EM_MOVE:
-		if (g::mouse.down()) {
+		if (g::mouse.down() && g::camera.is_camera_ortho()) {
 			edit_click_move();
 		}
 		break;
@@ -477,7 +462,7 @@ void g::Spline::edit_unclick()
 {
 	if (! g::is_edit_mode)
 		return;
-	if (! g::camera.is_camera_ortho())
+	if (g::mouse.locked())
 		return;
 	switch (m_edit_mode) {
 	case EM_SELECT:
@@ -486,7 +471,9 @@ void g::Spline::edit_unclick()
 	case EM_INSERT:
 		break;
 	case EM_MOVE:
-		edit_click_stop_move();
+		if (g::camera.is_camera_ortho()) {
+			edit_click_stop_move();
+		}
 		break;
 	}
 }

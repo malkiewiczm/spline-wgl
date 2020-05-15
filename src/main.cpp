@@ -281,7 +281,7 @@ static void draw()
 	// draw UI
 	g::shaders.PC().view(glm::mat4(1.f));
 	g::shaders.PC().projection(glm::mat4(1.f));
-	if (g::spline.show_ui() && g::camera.is_camera_ortho()) {
+	if (g::spline.show_ui() && (g::camera.is_camera_ortho() || g::spline.edit_mode() == g::Spline::EM_SELECT)) {
 		g::spline.ui_vao().draw();
 	}
 }
