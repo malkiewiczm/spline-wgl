@@ -1,7 +1,7 @@
 .PHONY: all clean
 
 MAKEFLAGS += Rr
-PROGRAMS := obj_to_bin.exe
+PROGRAMS := obj_to_bin.exe bin_to_cpp.exe
 CXX := g++
 CXXFLAGS := -Wall -Wextra -Wpedantic -Wshadow
 

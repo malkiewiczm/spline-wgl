@@ -1,5 +1,6 @@
 #include "cart.hpp"
 #include "spline.hpp"
+#include "obj_loader.hpp"
 
 g::Cart g::cart;
 
@@ -9,7 +10,7 @@ void g::Cart::init()
 {
 	m_vao.init(GL_TRIANGLES);
 	reset();
-	update_buffers();
+	load_object_PNC(g::obj::cart, glm::vec3(0.8f, 0.f, 0.f), m_vao);
 }
 
 void g::Cart::reset()
@@ -21,30 +22,6 @@ void g::Cart::reset()
 
 void g::Cart::update_buffers()
 {
-	//constexpr float W = 1.5f;
-	//constexpr float H = 0.6f;
-	constexpr float S = 0.5f;
-	constexpr float R = 0.5773502f;
-	const glm::vec3 color { 0.8f, 0.f, 0.f };
-	std::vector<Vertex_PNC> vertices {
-		{ m_draw_position + glm::vec3(-S, -S, -S), { -R, -R, -R }, color },
-		{ m_draw_position + glm::vec3(-S, -S, S), { -R, -R, R }, color },
-		{ m_draw_position + glm::vec3(-S, S, -S), { -R, R, -R }, color },
-		{ m_draw_position + glm::vec3(-S, S, S), { -R, R, R }, color },
-		{ m_draw_position + glm::vec3(S, -S, -S), { R, -R, -R }, color },
-		{ m_draw_position + glm::vec3(S, -S, S), { R, -R, R }, color },
-		{ m_draw_position + glm::vec3(S, S, -S), { R, R, -R }, color },
-		{ m_draw_position + glm::vec3(S, S, S), { R, R, R }, color },
-	};
-	std::vector<GLuint> indices {
-		0, 1, 2, 1, 3, 2,
-		1, 5, 7, 1, 7, 3,
-		5, 4, 6, 5, 6, 7,
-		0, 2, 6, 0, 6, 4,
-		1, 5, 4, 1, 4, 0,
-		3, 7, 6, 3, 6, 2
-	};
-	m_vao.update_buffers(vertices, indices);
 }
 
 void g::Cart::step(float dt)
