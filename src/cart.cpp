@@ -20,8 +20,9 @@ void g::Cart::reset()
 	m_draw_position = { 0.f, 0.f, 0.f };
 }
 
-void g::Cart::update_buffers()
+glm::mat4 g::Cart::get_transform() const
 {
+	return glm::translate(glm::mat4(1.f), m_draw_position);
 }
 
 void g::Cart::step(float dt)
@@ -30,5 +31,4 @@ void g::Cart::step(float dt)
 	g::Spline::Piece piece = g::spline.get_piece(m_position);
 	m_velocity += glm::dot(piece.tangent, GRAVITY)*dt;
 	m_draw_position = piece.position;
-	update_buffers();
 }

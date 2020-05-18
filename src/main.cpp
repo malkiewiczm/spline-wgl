@@ -280,7 +280,9 @@ static void draw()
 	g::shaders.PNC().view(view);
 	g::shaders.PNC().projection(projection);
 	g::spline.curve_vao().draw();
+	g::shaders.PNC().model(g::cart.get_transform());
 	g::cart.vao().draw();
+	g::shaders.PNC().model(glm::mat4(1.f));
 	// draw PC vaos
 	g::shaders.PC().use();
 	g::shaders.PC().view(view);

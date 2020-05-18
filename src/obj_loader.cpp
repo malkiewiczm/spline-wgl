@@ -40,7 +40,7 @@ static void load_obj_generic(const void *data, std::vector<ObjVertex> &vertices,
 	}
 	const int index_len = read_u32(data);
 	indices.resize(index_len);
-	for (int i = 0; i < vertex_len; ++i) {
+	for (int i = 0; i < index_len; ++i) {
 		indices[i] = read_u32(data);
 	}
 }

@@ -24,12 +24,16 @@ static void _die(const char *msg, const char *file, int line)
 struct Vec3 {
 	float x, y, z;
 	Vec3() = default;
+	Vec3(float l_x, float l_y, float l_z)
+		: x(l_x), y(l_y), z(l_z) {}
 	Vec3(std::stringstream &ss);
 };
 
 struct Vec2 {
 	float x, y;
 	Vec2() = default;
+	Vec2(float l_x, float l_y)
+		: x(l_x), y(l_y) {}
 	Vec2(std::stringstream &ss);
 };
 
@@ -84,6 +88,7 @@ static void read_file(const char *const fname, std::vector<Vertex> &vertices, st
 	std::vector<Vec3> normals;
 	using Key_t = std::tuple<int, int, int>;
 	std::map<Key_t, int> match;
+	indices.clear();
 	while (std::getline(file, line)) {
 		std::stringstream ss(line);
 		ss.ignore(256, ' ');
@@ -102,9 +107,9 @@ static void read_file(const char *const fname, std::vector<Vertex> &vertices, st
 				if (one == std::string::npos || two == std::string::npos) {
 					die("malformed obj file (no normals?)");
 				}
-				const int p_index = stoi(chunk.substr(0, one)) - 1;
-				const int t_index = stoi(chunk.substr(one + 1, two)) - 1;
-				const int n_index = stoi(chunk.substr(two + 1)) - 1;
+				const int p_index = std::stoi(chunk.substr(0, one)) - 1;
+				const int t_index = (one + 1 == two) ? 0 : std::stoi(chunk.substr(one + 1, two)) - 1;
+				const int n_index = std::stoi(chunk.substr(two + 1)) - 1;
 				const Key_t key = std::make_tuple(p_index, t_index, n_index);
 				auto iter = match.find(key);
 				int index;
@@ -119,6 +124,14 @@ static void read_file(const char *const fname, std::vector<Vertex> &vertices, st
 		}
 	}
 	vertices.resize(match.size());
+	trace(positions.size());
+	trace(uvs.size());
+	trace(normals.size());
+	trace(vertices.size());
+	trace(indices.size());
+	if (uvs.empty()) {
+		uvs.push_back({ 0.f, 0.f });
+	}
 	for (auto kv : match) {
 		Vertex &v = vertices[kv.second];
 		v.position = positions[std::get<0>(kv.first)];
