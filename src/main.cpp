@@ -233,8 +233,8 @@ static void setup_shader()
 	{
 		// calling this event updates the projection
 		EmscriptenUiEvent evt;
-		evt.windowInnerWidth = 1112;
-		evt.windowInnerHeight = 920;
+		evt.windowInnerWidth = 1752;
+		evt.windowInnerHeight = 976;
 		on_resize(EMSCRIPTEN_EVENT_RESIZE, &evt, nullptr);
 	}
 	g::shaders.init();
