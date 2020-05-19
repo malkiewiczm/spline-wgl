@@ -100,32 +100,40 @@ static bool cmp_distance(const g::Spline::Piece &p, const float d)
 
 g::Spline::Piece g::Spline::get_piece(const float distance)
 {
-	Piece ret;
-	ret.distance = distance;
 	if (m_curve_pts.size() <= 1) {
+		Piece ret;
+		ret.distance = distance;
 		ret.position = glm::vec3(0.f);
-		ret.tangent = glm::vec3(0.f, 1.f, 0.f);
+		ret.tangent = glm::vec3(1.f, 0.f, 0.f);
+		ret.normal = glm::vec3(0.f, 1.f, 0.f);
+		ret.binormal = glm::vec3(0.f, 0.f, 1.f);
 		return ret;
 	}
 	auto iter = std::lower_bound(m_curve_pts.begin(), m_curve_pts.end(), distance, cmp_distance);
 	if (iter == m_curve_pts.begin()) {
 		// implies that a negative distance was given
-		const Piece &p = m_curve_pts.front();
-		ret.tangent = p.tangent;
-		ret.position = p.position + p.tangent*distance;
+		Piece p = m_curve_pts.front();
+		p.distance = distance;
+		p.position = p.position + p.tangent*distance;
+		return p;
 	} else if (iter == m_curve_pts.end()) {
 		// implies that a distance greater than the curve length was given
-		const Piece &p = m_curve_pts.back();
-		ret.tangent = p.tangent;
-		ret.position = p.position + p.tangent*(distance - p.distance);
+		Piece p = m_curve_pts.back();
+		p.position = p.position + p.tangent*(distance - p.distance);
+		p.distance = distance;
+		return p;
 	} else {
 		const Piece &p0 = *(iter - 1);
 		const Piece &p1 = *iter;
 		const float t = (distance - p0.distance) / (p1.distance - p0.distance);
-		ret.tangent = glm::mix(p0.tangent, p1.tangent, t);
-		ret.position = glm::mix(p0.position, p1.position, t);
+		Piece p;
+		p.distance = distance;
+		p.tangent = glm::mix(p0.tangent, p1.tangent, t);
+		p.normal = glm::mix(p0.normal, p1.normal, t);
+		p.binormal = glm::mix(p0.binormal, p1.binormal, t);
+		p.position = glm::mix(p0.position, p1.position, t);
+		return p;
 	}
-	return ret;
 }
 
 void g::Spline::update_control_vao()
