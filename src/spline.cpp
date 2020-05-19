@@ -30,19 +30,23 @@ template<int deg>
 static g::Spline::Piece decasteljau(const glm::vec3 c[deg + 1], const float u)
 {
 	const float v = 1.f - u;
-	g::Spline::Piece dp[deg + 1];
+	glm::vec3 dp[deg + 1];
 	for (int i = 0; i <= deg; ++i) {
-		dp[i].position = c[i];
+		dp[i] = c[i];
 	}
 	for (int d = deg; d >= 2; --d) {
 		for (int i = 0; i < d; ++i) {
-			dp[i].position = dp[i].position*v + dp[i + 1].position*u;
+			dp[i] = dp[i]*v + dp[i + 1]*u;
 		}
 	}
 	// d = 1
-	dp[0].tangent = glm::normalize(dp[1].position - dp[0].position);
-	dp[0].position = dp[0].position*v + dp[1].position*u;
-	return dp[0];
+	g::Spline::Piece ret;
+	ret.position = dp[0]*v + dp[1]*u;
+	ret.tangent = glm::normalize(dp[1] - dp[0]);
+	const glm::vec3 up { 0.f, 1.f, 0.f };
+	ret.binormal = glm::normalize(glm::cross(ret.tangent, up));
+	ret.normal = glm::normalize(glm::cross(ret.binormal, ret.tangent));
+	return ret;
 }
 
 template<int deg>
@@ -215,27 +219,18 @@ void g::Spline::update_curve_vao()
 	std::vector<Vertex_PNC> vertices(m_curve_pts.size()*4);
 	std::vector<GLuint> indices;
 	constexpr float R = 0.1f;
-	const glm::vec3 up { 0.f, 1.f, 0.f };
-	glm::vec3 last_binormal { 0.f, 0.f, -1.f };
 	for (unsigned i = 0; i < m_curve_pts.size(); ++i) {
-		glm::vec3 binormal = glm::cross(m_curve_pts[i].tangent, up);
-		if (glm::length(binormal) > 0.01f) {
-			binormal = glm::normalize(binormal);
-			last_binormal = binormal;
-		} else {
-			binormal = last_binormal;
-		}
-		const glm::vec3 normal = glm::normalize(glm::cross(binormal, m_curve_pts[i].tangent));
 		const int k = 4*i;
-		vertices[k].position = m_curve_pts[i].position - binormal*R;
-		vertices[k + 1].position = m_curve_pts[i].position + binormal*R;
-		vertices[k + 2].position = vertices[k].position + normal*R;
-		vertices[k + 3].position = vertices[k + 1].position + normal*R;
+		const Piece &p = m_curve_pts[i];
+		vertices[k].position = p.position - p.binormal*R;
+		vertices[k + 1].position = p.position + p.binormal*R;
+		vertices[k + 2].position = vertices[k].position + p.normal*R;
+		vertices[k + 3].position = vertices[k + 1].position + p.normal*R;
 		vertices[k].color = color;
 		vertices[k + 1].color = color;
 		vertices[k + 2].color = color;
 		vertices[k + 3].color = color;
-		const glm::vec3 center = m_curve_pts[i].position + normal*R;
+		const glm::vec3 center = p.position + p.normal*R;
 		for (int j = 0; j < 4; ++j) {
 			vertices[k + j].normal = glm::normalize(center - vertices[k + j].position);
 		}
