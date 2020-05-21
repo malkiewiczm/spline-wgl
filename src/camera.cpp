@@ -1,5 +1,6 @@
 #include "camera.hpp"
 #include "glm/gtx/quaternion.hpp"
+#include "cart.hpp"
 
 g::Camera g::camera;
 g::Camera3d g::camera_3d;
@@ -36,12 +37,12 @@ glm::mat4 g::Camera::calc_view()
 		glm::mat4 m = glm::mat4_cast(g::camera_3d.rotation());
 		return glm::translate(m, -g::camera_3d.position());
 	}
-	case CAMERA_ORTHO: {
+	case CAMERA_ORTHO:
 		return g::camera_ortho.transformation();
-	}
-	case CAMERA_LOOKAT: {
+	case CAMERA_LOOKAT:
 		return glm::lookAt(g::camera_3d.position(), m_looking_at, glm::vec3(0.f, 1.f, 0.f));
-	}
+	case CAMERA_POV:
+		return g::cart.get_transform_inv();
 	}
 }
 

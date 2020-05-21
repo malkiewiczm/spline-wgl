@@ -26,6 +26,11 @@ glm::mat4 g::Cart::get_transform() const
 	return glm::translate(glm::mat4(1.f), m_draw_position)*m_rotation;
 }
 
+glm::mat4 g::Cart::get_transform_inv() const
+{
+	return glm::translate(glm::mat4(1.f), m_draw_position)*m_rotation;
+}
+
 static glm::mat4 make_matrix(const glm::vec3 &v0, const glm::vec3 &v1, const glm::vec3 &v2)
 {
 	return glm::mat4 {

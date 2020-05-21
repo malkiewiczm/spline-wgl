@@ -6,7 +6,7 @@ namespace g {
 	class Camera {
 	public:
 		enum CameraKind {
-			CAMERA_3D, CAMERA_ORTHO, CAMERA_LOOKAT
+			CAMERA_3D, CAMERA_ORTHO, CAMERA_LOOKAT, CAMERA_POV
 		};
 		void init();
 		ACC_V(CameraKind, kind)
@@ -19,6 +19,9 @@ namespace g {
 		}
 		bool is_camera_lookat() const {
 			return m_kind == CAMERA_LOOKAT;
+		}
+		bool is_camera_pov() const {
+			return m_kind == CAMERA_POV;
 		}
 		glm::mat4 calc_view();
 		glm::mat4 calc_projection();

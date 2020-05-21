@@ -9,12 +9,17 @@
 #include "spline.hpp"
 #include "cart.hpp"
 
+constexpr int starting_width = 1112;
+constexpr int starting_height = 920;
+
 static EM_BOOL on_resize(int eventType, const EmscriptenUiEvent *uiEvent, void *userData)
 {
 	UNUSED(eventType);
 	UNUSED(userData);
 	g::canvas_width = uiEvent->windowInnerWidth;
 	g::canvas_height = uiEvent->windowInnerHeight;
+	trace(g::canvas_width);
+	trace(g::canvas_height);
 	emscripten_set_canvas_element_size("#canvas", g::canvas_width, g::canvas_height);
 	glViewport(0, 0, g::canvas_width, g::canvas_height);
 	return true;
@@ -108,6 +113,10 @@ static EM_BOOL on_key(int eventType, const EmscriptenKeyboardEvent *keyEvent, vo
 			break;
 		case '4':
 			g::camera.kind(g::Camera::CAMERA_LOOKAT);
+			ret = true;
+			break;
+		case '5':
+			g::camera.kind(g::Camera::CAMERA_POV);
 			ret = true;
 			break;
 		case 'W':
@@ -233,8 +242,8 @@ static void setup_shader()
 	{
 		// calling this event updates the projection
 		EmscriptenUiEvent evt;
-		evt.windowInnerWidth = 1752;
-		evt.windowInnerHeight = 976;
+		evt.windowInnerWidth = starting_width;
+		evt.windowInnerHeight = starting_height;
 		on_resize(EMSCRIPTEN_EVENT_RESIZE, &evt, nullptr);
 	}
 	g::shaders.init();

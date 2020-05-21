@@ -173,7 +173,7 @@ build/camera.o: src/camera.cpp src/camera.hpp src/common.hpp \
  src/glm/gtx/../gtx/norm.hpp src/glm/gtx/../gtx/../gtx/component_wise.hpp \
  src/glm/gtx/../gtx/../gtx/../detail/setup.hpp \
  src/glm/gtx/../gtx/../gtx/component_wise.inl src/glm/gtx/../gtx/norm.inl \
- src/glm/gtx/quaternion.inl
+ src/glm/gtx/quaternion.inl src/cart.hpp src/vao.hpp
 build/cart.o: src/cart.cpp src/cart.hpp src/common.hpp src/glm/glm.hpp \
  src/glm/detail/_fixes.hpp src/glm/detail/setup.hpp \
  src/glm/detail/../simd/platform.h src/glm/fwd.hpp \

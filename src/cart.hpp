@@ -10,6 +10,7 @@ namespace g {
 		void reset();
 		void step(float dt);
 		glm::mat4 get_transform() const;
+		glm::mat4 get_transform_inv() const;
 		GET_CR(glm::vec3, draw_position)
 		GET_CR(VAO<Vertex_PNC>, vao)
 	private:
