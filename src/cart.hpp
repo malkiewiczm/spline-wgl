@@ -18,7 +18,9 @@ namespace g {
 		float m_velocity;
 		glm::vec3 m_draw_position;
 		VAO<Vertex_PNC> m_vao;
-		glm::mat4 m_rotation;
+		glm::vec3 m_tangent;
+		glm::vec3 m_normal;
+		glm::vec3 m_binormal;
 	};
 	extern Cart cart;
 }

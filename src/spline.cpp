@@ -80,17 +80,10 @@ static void calc_spline3(const std::vector<g::Spline::ControlPoint> &m_control_p
 		c[b + 1] = r1;
 		c[b + 2] = glm::mix(a, ap, 2.f/3.f);
 	}
-#define MAKE_CURVES
-#ifdef MAKE_CURVES
 	for (unsigned i = deg; i < c.size(); i += deg) {
 		const glm::vec3 l_c[deg + 1] { c[i - 3], c[i - 2], c[i - 1], c[i] };
 		append_bezier<deg>(pts, l_c);
 	}
-#else
-	for (unsigned i = 0; i < c.size(); ++i) {
-		pts.push_back(c[i]);
-	}
-#endif
 }
 
 static bool cmp_distance(const g::Spline::Piece &p, const float d)

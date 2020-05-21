@@ -41,8 +41,10 @@ glm::mat4 g::Camera::calc_view()
 		return g::camera_ortho.transformation();
 	case CAMERA_LOOKAT:
 		return glm::lookAt(g::camera_3d.position(), m_looking_at, glm::vec3(0.f, 1.f, 0.f));
-	case CAMERA_POV:
-		return g::cart.get_transform_inv();
+	case CAMERA_POV: {
+		const glm::vec3 offset { 0.f, -0.25f, 0.f };
+		return glm::translate(glm::mat4(1.f), offset)*g::cart.get_transform_inv();
+	}
 	}
 }
 

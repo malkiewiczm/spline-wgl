@@ -18,17 +18,9 @@ void g::Cart::reset()
 	m_position = 0.f;
 	m_velocity = 0.f;
 	m_draw_position = { 0.f, 0.f, 0.f };
-	m_rotation = glm::mat4(1.f);
-}
-
-glm::mat4 g::Cart::get_transform() const
-{
-	return glm::translate(glm::mat4(1.f), m_draw_position)*m_rotation;
-}
-
-glm::mat4 g::Cart::get_transform_inv() const
-{
-	return glm::translate(glm::mat4(1.f), m_draw_position)*m_rotation;
+	m_tangent = { 1.f, 0.f, 0.f };
+	m_normal = { 0.f, 1.f, 0.f };
+	m_binormal = { 0.f, 0.f, 1.f };
 }
 
 static glm::mat4 make_matrix(const glm::vec3 &v0, const glm::vec3 &v1, const glm::vec3 &v2)
@@ -38,11 +30,26 @@ static glm::mat4 make_matrix(const glm::vec3 &v0, const glm::vec3 &v1, const glm
 	};
 }
 
+glm::mat4 g::Cart::get_transform() const
+{
+	const glm::mat4 rot = make_matrix(m_tangent, m_normal, m_binormal);
+	return glm::translate(glm::mat4(1.f), m_draw_position)*rot;
+}
+
+glm::mat4 g::Cart::get_transform_inv() const
+{
+	// the order is different in order to make a 90 deg rotation
+	const glm::mat4 rot = make_matrix(m_binormal, m_normal, -m_tangent);
+	return glm::translate(glm::transpose(rot), -m_draw_position);
+}
+
 void g::Cart::step(float dt)
 {
 	m_position += m_velocity*dt;
 	g::Spline::Piece piece = g::spline.get_piece(m_position);
 	m_velocity += glm::dot(piece.tangent, GRAVITY)*dt;
 	m_draw_position = piece.position;
-	m_rotation = make_matrix(piece.tangent, piece.normal, piece.binormal);
+	m_tangent = piece.tangent;
+	m_normal = piece.normal;
+	m_binormal = piece.binormal;
 }

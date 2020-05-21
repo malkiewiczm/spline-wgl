@@ -18,8 +18,8 @@ static EM_BOOL on_resize(int eventType, const EmscriptenUiEvent *uiEvent, void *
 	UNUSED(userData);
 	g::canvas_width = uiEvent->windowInnerWidth;
 	g::canvas_height = uiEvent->windowInnerHeight;
-	trace(g::canvas_width);
-	trace(g::canvas_height);
+	//trace(g::canvas_width);
+	//trace(g::canvas_height);
 	emscripten_set_canvas_element_size("#canvas", g::canvas_width, g::canvas_height);
 	glViewport(0, 0, g::canvas_width, g::canvas_height);
 	return true;
