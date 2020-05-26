@@ -9,8 +9,8 @@
 #include "spline.hpp"
 #include "cart.hpp"
 
-constexpr int starting_width = 1112;
-constexpr int starting_height = 920;
+constexpr int starting_width = 1752;
+constexpr int starting_height = 976;
 
 static EM_BOOL on_resize(int eventType, const EmscriptenUiEvent *uiEvent, void *userData)
 {
