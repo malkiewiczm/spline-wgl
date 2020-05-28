@@ -20,8 +20,8 @@ void g::Spline::init()
 	std::vector<GLuint> index_data {
 		0, 1, 2
 	};
-	m_curve_vao.init(GL_TRIANGLES);
-	m_curve_vao.update_buffers(vertex_data, index_data);
+	m_track_vao.init(GL_TRIANGLES);
+	m_track_vao.update_buffers(vertex_data, index_data);
 	m_ui_vao.init(GL_LINES);
 	m_ui_vao.update_buffers({ { glm::vec3(-0.5f), glm::vec3(1.f) }, { glm::vec3(0.5f), glm::vec3(0.f) } }, { 0, 1 });
 }
@@ -148,7 +148,7 @@ void g::Spline::update_control_vao()
 		2, 0, 3, 1, 7, 5, 6, 4,
 	};
 	for (int i = 0; i < 8; ++i) {
-		constexpr float R = 0.2f;
+		constexpr float R = 0.5f;
 		cube_corners[i].x = (i & 1) ? R : -R;
 		cube_corners[i].y = ((i >> 1) & 1) ? R : -R;
 		cube_corners[i].z = ((i >> 2) & 1) ? R : -R;
@@ -219,17 +219,19 @@ void g::Spline::update_ui_insert_vao()
 	m_ui_vao.update_buffers(vertices, indices);
 }
 
-void g::Spline::update_curve_vao()
+void g::Spline::update_track_vao()
 {
 	const glm::vec3 color { 0.f, 0.5f, 0.5f };
 	std::vector<Vertex_PNC> vertices(m_curve_pts.size()*4);
 	std::vector<GLuint> indices;
-	constexpr float R = 0.1f;
+	constexpr float R = 0.5f;
+	constexpr float heartline = 0.6f;
 	for (unsigned i = 0; i < m_curve_pts.size(); ++i) {
 		const int k = 4*i;
 		const Piece &p = m_curve_pts[i];
-		vertices[k].position = p.position - p.binormal*R;
-		vertices[k + 1].position = p.position + p.binormal*R;
+		const glm::vec3 track_pos = p.position - heartline*p.normal;
+		vertices[k].position = track_pos - p.binormal*R;
+		vertices[k + 1].position = track_pos + p.binormal*R;
 		vertices[k + 2].position = vertices[k].position + p.normal*R;
 		vertices[k + 3].position = vertices[k + 1].position + p.normal*R;
 		vertices[k].color = color;
@@ -248,7 +250,7 @@ void g::Spline::update_curve_vao()
 			indices.push_back(k + pattern[j]);
 		}
 	}
-	m_curve_vao.update_buffers(vertices, indices);
+	m_track_vao.update_buffers(vertices, indices);
 }
 
 void g::Spline::recalculate_curve_all()
@@ -260,7 +262,6 @@ void g::Spline::recalculate_curve_all()
 	update_control_vao();
 	if (m_curve_pts.empty())
 		return;
-	update_curve_vao();
 	// calculate path length
 	{
 		m_curve_pts[0].distance = 0.f;
@@ -269,6 +270,7 @@ void g::Spline::recalculate_curve_all()
 			m_curve_pts[i].distance = m_curve_pts[i - 1].distance + delta;
 		}
 	}
+	update_track_vao();
 }
 
 void g::Spline::add_pt(const glm::vec3 &p)

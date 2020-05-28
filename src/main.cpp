@@ -289,7 +289,7 @@ static void draw()
 	g::shaders.PNC().use();
 	g::shaders.PNC().view(view);
 	g::shaders.PNC().projection(projection);
-	g::spline.curve_vao().draw();
+	g::spline.track_vao().draw();
 	g::shaders.PNC().model(g::cart.get_transform());
 	g::cart.vao().draw();
 	g::shaders.PNC().model(glm::mat4(1.f));
