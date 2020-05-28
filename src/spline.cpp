@@ -29,22 +29,27 @@ void g::Spline::init()
 template<int deg>
 static g::Spline::Piece decasteljau(const glm::vec3 c[deg + 1], const float u)
 {
+	static_assert(deg >= 2, "degree must be at least 2");
 	const float v = 1.f - u;
 	glm::vec3 dp[deg + 1];
 	for (int i = 0; i <= deg; ++i) {
 		dp[i] = c[i];
 	}
-	for (int d = deg; d >= 2; --d) {
+	for (int d = deg; d >= 3; --d) {
 		for (int i = 0; i < d; ++i) {
 			dp[i] = dp[i]*v + dp[i + 1]*u;
 		}
+	}
+	// d = 2
+	const glm::vec3 d2 = glm::normalize(dp[2] - 2.f*dp[1] + dp[0]);
+	for (int i = 0; i < 2; ++i) {
+		dp[i] = dp[i]*v + dp[i + 1]*u;
 	}
 	// d = 1
 	g::Spline::Piece ret;
 	ret.position = dp[0]*v + dp[1]*u;
 	ret.tangent = glm::normalize(dp[1] - dp[0]);
-	const glm::vec3 up { 0.f, 1.f, 0.f };
-	ret.binormal = glm::normalize(glm::cross(ret.tangent, up));
+	ret.binormal = glm::normalize(glm::cross(ret.tangent, d2));
 	ret.normal = glm::normalize(glm::cross(ret.binormal, ret.tangent));
 	return ret;
 }
@@ -268,7 +273,11 @@ void g::Spline::recalculate_curve_all()
 
 void g::Spline::add_pt(const glm::vec3 &p)
 {
-	m_control_pts.push_back({ p, 0. });
+#ifdef HAS_ROLL
+	m_control_pts.push_back({ p, 0.f });
+#else
+	m_control_pts.push_back({ p });
+#endif
 	recalculate_curve_all();
 }
 
@@ -396,7 +405,11 @@ void g::Spline::edit_click_move()
 	p.z = v4.z;
 	for (unsigned i = 0; i < m_selection.size(); ++i) {
 		const int k = m_selection[i];
+#ifdef HAS_ROLL
 		m_control_pts[k] = { m_original_control_pts[i].position + p, m_original_control_pts[i].roll };
+#else
+		m_control_pts[k] = { m_original_control_pts[i].position + p };
+#endif
 	}
 	recalculate_curve_all();
 }

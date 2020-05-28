@@ -15,7 +15,6 @@ namespace g {
 		};
 		struct ControlPoint {
 			glm::vec3 position;
-			float roll;
 		};
 		enum EditMode {
 			EM_SELECT, EM_INSERT, EM_MOVE

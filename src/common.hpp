@@ -53,6 +53,12 @@ static inline std::ostream &operator<< (std::ostream &o, const glm::vec3 &v)
 	return o;
 }
 
+static inline std::ostream &operator<< (std::ostream &o, const glm::quat &q)
+{
+	o << "{ " << q.w << "; " << q.x << ", " << q.y << ", " << q.z << " }";
+	return o;
+}
+
 namespace g {
 	extern int canvas_width;
 	extern int canvas_height;

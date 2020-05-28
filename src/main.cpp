@@ -198,6 +198,7 @@ static EM_BOOL on_mouse(int eventType, const EmscriptenMouseEvent *mouseEvent, v
 			m /= 400.f;
 			g::camera_3d.rotate_y(m.x);
 			g::camera_3d.rotate_x(m.y);
+			trace(g::camera_3d.rotation());
 		} else {
 			g::spline.edit_mouse_move();
 		}
