@@ -59,6 +59,13 @@ static inline std::ostream &operator<< (std::ostream &o, const glm::quat &q)
 	return o;
 }
 
+static inline glm::mat4 make_matrix(const glm::vec3 &v0, const glm::vec3 &v1, const glm::vec3 &v2)
+{
+	return glm::mat4 {
+		v0.x, v0.y, v0.z, 0.f, v1.x, v1.y, v1.z, 0.f, v2.x, v2.y, v2.z, 0.f, 0.f, 0.f, 0.f, 1.f
+	};
+}
+
 namespace g {
 	extern int canvas_width;
 	extern int canvas_height;

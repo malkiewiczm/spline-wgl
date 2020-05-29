@@ -1535,7 +1535,8 @@ build/spline.o: src/spline.cpp src/spline.hpp src/common.hpp \
  src/glm/gtc/../ext/quaternion_transform.hpp \
  src/glm/gtc/../ext/quaternion_transform.inl src/glm/gtc/quaternion.inl \
  src/glm/gtc/epsilon.hpp src/glm/gtc/../detail/setup.hpp \
- src/glm/gtc/epsilon.inl src/vao.hpp src/camera.hpp src/mouse.hpp
+ src/glm/gtc/epsilon.inl src/vao.hpp src/camera.hpp src/mouse.hpp \
+ src/obj_loader.hpp
 build/track_obj.o: src/track_obj.cpp src/obj_loader.hpp src/vao.hpp \
  src/common.hpp src/glm/glm.hpp src/glm/detail/_fixes.hpp \
  src/glm/detail/setup.hpp src/glm/detail/../simd/platform.h \

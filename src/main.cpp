@@ -198,7 +198,6 @@ static EM_BOOL on_mouse(int eventType, const EmscriptenMouseEvent *mouseEvent, v
 			m /= 400.f;
 			g::camera_3d.rotate_y(m.x);
 			g::camera_3d.rotate_x(m.y);
-			trace(g::camera_3d.rotation());
 		} else {
 			g::spline.edit_mouse_move();
 		}
@@ -289,7 +288,11 @@ static void draw()
 	g::shaders.PNC().use();
 	g::shaders.PNC().view(view);
 	g::shaders.PNC().projection(projection);
-	g::spline.track_vao().draw();
+	for (auto m : g::spline.track_pieces()) {
+		g::shaders.PNC().model(m);
+		g::spline.track_vao().draw();
+	}
+	g::shaders.PNC().model(glm::mat4(1.f));
 	g::shaders.PNC().model(g::cart.get_transform());
 	g::cart.vao().draw();
 	g::shaders.PNC().model(glm::mat4(1.f));

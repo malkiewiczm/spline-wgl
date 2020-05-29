@@ -34,6 +34,7 @@ namespace g {
 		GET_CR(VAO<Vertex_PC>, control_vao)
 		GET_CR(VAO<Vertex_PNC>, track_vao)
 		GET_CR(VAO<Vertex_PC>, ui_vao)
+		GET_CR(std::vector<glm::mat4>, track_pieces)
 	private:
 		EditMode m_edit_mode;
 		bool m_show_control_mesh;
@@ -43,11 +44,12 @@ namespace g {
 		VAO<Vertex_PC> m_control_vao;
 		VAO<Vertex_PNC> m_track_vao;
 		VAO<Vertex_PC> m_ui_vao;
+		std::vector<glm::mat4> m_track_pieces;
 		std::vector<Piece> m_curve_pts;
 		std::vector<ControlPoint> m_control_pts;
 		std::vector<ControlPoint> m_original_control_pts;
 		void update_control_vao();
-		void update_track_vao();
+		void update_track_transforms();
 		void update_ui_select_vao();
 		void update_ui_insert_vao();
 		void update_ui_move_vao();

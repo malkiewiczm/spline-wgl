@@ -2,6 +2,7 @@
 #include "camera.hpp"
 #include "mouse.hpp"
 #include <algorithm>
+#include "obj_loader.hpp"
 
 g::Spline g::spline;
 
@@ -12,18 +13,11 @@ void g::Spline::init()
 	m_show_ui = false;
 	m_control_vao.init(GL_LINES);
 	m_control_vao.update_buffers({ { glm::vec3(-5.f), glm::vec3(1.f, 0., 0.f) }, { glm::vec3(5.f), glm::vec3(0.f, 0., 1.f) } }, { 0, 1 });
-	std::vector<Vertex_PNC> vertex_data {
-		{ { 0.273279f, 1.050624f, -2.005395f }, { 0.f, 0.f, 1.f }, { 0.89596240119633f, 0.82284005249184f, 0.7466048158208f } },
-		{ { -0.857576f, -0.598839f, -2.026340f }, { 0.f, 0.f, 1.f }, { 0.17410809656056f, 0.85894344920194f, 0.71050141911069f } },
-		{ { 1.472728f, 0.180840f, 1.731609f }, { 0.f, 0.f, 1.f }, { 0.5135349589526f, 0.30399487289041f, 0.014984588152715f } },
-	};
-	std::vector<GLuint> index_data {
-		0, 1, 2
-	};
 	m_track_vao.init(GL_TRIANGLES);
-	m_track_vao.update_buffers(vertex_data, index_data);
+	load_object_PNC(g::obj::track, glm::vec3(0.f, 0.5f, 0.5f), m_track_vao);
 	m_ui_vao.init(GL_LINES);
 	m_ui_vao.update_buffers({ { glm::vec3(-0.5f), glm::vec3(1.f) }, { glm::vec3(0.5f), glm::vec3(0.f) } }, { 0, 1 });
+	m_track_pieces.clear();
 }
 
 template<int deg>
@@ -219,38 +213,20 @@ void g::Spline::update_ui_insert_vao()
 	m_ui_vao.update_buffers(vertices, indices);
 }
 
-void g::Spline::update_track_vao()
+void g::Spline::update_track_transforms()
 {
-	const glm::vec3 color { 0.f, 0.5f, 0.5f };
-	std::vector<Vertex_PNC> vertices(m_curve_pts.size()*4);
-	std::vector<GLuint> indices;
-	constexpr float R = 0.5f;
-	constexpr float heartline = 0.6f;
+	m_track_pieces.clear();
+	constexpr float PIECE_SIZE = 1.0f;
+	float current_pos = 0.f;
 	for (unsigned i = 0; i < m_curve_pts.size(); ++i) {
-		const int k = 4*i;
-		const Piece &p = m_curve_pts[i];
-		const glm::vec3 track_pos = p.position - heartline*p.normal;
-		vertices[k].position = track_pos - p.binormal*R;
-		vertices[k + 1].position = track_pos + p.binormal*R;
-		vertices[k + 2].position = vertices[k].position + p.normal*R;
-		vertices[k + 3].position = vertices[k + 1].position + p.normal*R;
-		vertices[k].color = color;
-		vertices[k + 1].color = color;
-		vertices[k + 2].color = color;
-		vertices[k + 3].color = color;
-		const glm::vec3 center = p.position + p.normal*R;
-		for (int j = 0; j < 4; ++j) {
-			vertices[k + j].normal = glm::normalize(center - vertices[k + j].position);
+		const Piece &piece = m_curve_pts[i];
+		if (current_pos >= piece.distance) {
+			const glm::mat4 rotation = make_matrix(piece.tangent, piece.normal, piece.binormal);
+			const glm::mat4 translation = glm::translate(glm::mat4(1.f), glm::vec3(piece.position));
+			m_track_pieces.push_back(translation*rotation);
+			current_pos += PIECE_SIZE;
 		}
 	}
-	const int pattern[18] = { 0, 4, 1, 1, 4, 5, 1, 5, 3, 3, 5, 7, 0, 4, 2, 2, 4, 6 };
-	for (unsigned i = 1; i < m_curve_pts.size(); ++i) {
-		const int k = (i - 1)*4;
-		for (int j = 0; j < 18; ++j) {
-			indices.push_back(k + pattern[j]);
-		}
-	}
-	m_track_vao.update_buffers(vertices, indices);
 }
 
 void g::Spline::recalculate_curve_all()
@@ -270,7 +246,7 @@ void g::Spline::recalculate_curve_all()
 			m_curve_pts[i].distance = m_curve_pts[i - 1].distance + delta;
 		}
 	}
-	update_track_vao();
+	update_track_transforms();
 }
 
 void g::Spline::add_pt(const glm::vec3 &p)

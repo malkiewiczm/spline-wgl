@@ -42,7 +42,7 @@ vec3 do_light(vec3 lightDir)\n\
 	float specular = 0.0;\n\
 	if(lambertian > 0.0) {\n\
 		float specAngle = max(dot(reflectDir, viewDir), 0.0);\n\
-		specular = pow(specAngle, 10.0);\n\
+		specular = pow(specAngle, 4.0);\n\
 	}\n\
 	vec3 specColor = color + vec3(0.3);\n\
 	return 0.3*color + lambertian*color + specular*specColor;\n\

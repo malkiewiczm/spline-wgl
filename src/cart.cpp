@@ -23,13 +23,6 @@ void g::Cart::reset()
 	m_binormal = { 0.f, 0.f, 1.f };
 }
 
-static glm::mat4 make_matrix(const glm::vec3 &v0, const glm::vec3 &v1, const glm::vec3 &v2)
-{
-	return glm::mat4 {
-		v0.x, v0.y, v0.z, 0.f, v1.x, v1.y, v1.z, 0.f, v2.x, v2.y, v2.z, 0.f, 0.f, 0.f, 0.f, 1.f
-	};
-}
-
 glm::mat4 g::Cart::get_transform() const
 {
 	const glm::mat4 rot = make_matrix(m_tangent, m_normal, m_binormal);
