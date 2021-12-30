@@ -2,3 +2,4 @@
 *.js
 *.wasm
 [Bb]uild/
+makefile
